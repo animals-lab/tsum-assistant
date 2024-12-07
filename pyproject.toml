@@ -1,0 +1,22 @@
+[project]
+name = "llama-agent"
+version = "0.1.0"
+description = "Llama Agent with FastAPI backend and NextJS frontend"
+authors = [
+    {name = "nerifuture", email = "notintricate@users.noreply.github.com"},
+]
+dependencies = [
+    "fastapi>=0.109.1",
+    "uvicorn[standard]>=0.23.2",
+    "python-dotenv>=1.0.0",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool.pdm.scripts]
+dev = "python run.py dev"
+prod = "python run.py prod"
+
+[tool.pdm]
+distribution = false
