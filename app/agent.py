@@ -21,7 +21,7 @@ class SimpleAgent(Workflow):
     @step
     async def chat_with_user(self, ev: StartEvent) -> StopEvent:
         # Create a new list with all messages plus the new input
-        llm = OpenAI(model="gpt-4o")
+        llm = OpenAI(model="gpt-4o-mini")
 
 
         chat_messages = [

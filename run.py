@@ -6,16 +6,10 @@ import sys
 from subprocess import CalledProcessError, run
 from shutil import which, copyfile
 
-FRONTEND_DIR = "frontend-new"
+FRONTEND_DIR = "frontend"
 
 def _setup_frontend_config():
     """Setup frontend configuration files"""
-    # Create .npmrc if it doesn't exist
-    npmrc_file = Path(FRONTEND_DIR) / ".npmrc"
-    if not npmrc_file.exists():
-        with open(npmrc_file, "w") as f:
-            f.write("node-options=--no-warnings\n")
-    
     # Create root .env if it doesn't exist
     env_file = Path(".env")
     if not env_file.exists():

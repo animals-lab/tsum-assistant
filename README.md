@@ -5,17 +5,19 @@ A modern full-stack boilerplate project featuring Next.js frontend with TypeScri
 ## Tech Stack
 
 ### Frontend
-- Next.js 14 with App Router
+- Next.js 15
+- React 19
 - TypeScript
-- Tailwind CSS
-- ESLint for code quality
+- Tailwind CSS 3.4
+- ESLint
 - PNPM for efficient package management
 
 ### Backend
-- FastAPI (0.109.1+)
+- FastAPI 0.109.1+
 - Python 3.12
 - Uvicorn ASGI server
 - PDM for dependency management
+- Llama Index 0.12.3
 
 ## Prerequisites
 
@@ -56,19 +58,23 @@ pdm run prod
 
 ```
 llama-agent/
-├── .frontend/           # Next.js frontend application
-│   ├── app/            # Next.js app directory (App Router)
-│   ├── public/         # Static assets
-│   ├── tailwind.config.ts  # Tailwind CSS configuration
-│   └── package.json    # Frontend dependencies
+├── frontend/          # Next.js frontend application
+│   ├── app/          # Next.js app directory (App Router)
+│   ├── components/   # React components
+│   ├── lib/          # Utility functions and shared code
+│   └── package.json  # Frontend dependencies
 │
-├── api/                # FastAPI backend
-│   └── main.py        # Main FastAPI application
+├── api/              # FastAPI backend
+│   ├── routers/     # API route handlers
+│   └── server.py    # Main FastAPI application
 │
-├── app/                # Python application code
-├── run.py             # Development and production server runner
-├── pyproject.toml     # Python project configuration
-└── pdm.lock           # Python dependency lock file
+├── app/              # Core Python application code
+│   ├── agent.py     # Agent implementation
+│   └── vercel.py    # Vercel-related functionality
+│
+├── run.py           # Development and production server runner
+├── pyproject.toml   # Python project configuration
+└── pdm.lock         # Python dependency lock file
 ```
 
 ## Features

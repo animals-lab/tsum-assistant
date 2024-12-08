@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ (it breaks the frontend requirements for utils.ts that should be in lib folder)
 lib64/
 parts/
 sdist/
