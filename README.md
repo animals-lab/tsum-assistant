@@ -1,6 +1,6 @@
 # Llama Agent
 
-A modern full-stack boilerplate project featuring Next.js frontend with TypeScript and FastAPI backend. This template provides a solid foundation for building scalable web applications with a clean architecture.
+A modern full-stack boilerplate project featuring Next.js frontend with TypeScript and FastAPI backend, powered by LlamaIndex for building AI agent workflows. This template provides a solid foundation for building scalable AI-enabled web applications with a clean architecture.
 
 ## Tech Stack
 
@@ -26,23 +26,16 @@ A modern full-stack boilerplate project featuring Next.js frontend with TypeScri
 - Node.js 18+
 - PNPM (Node.js package manager)
 
-## Setup
+## Setup & Development
 
-Install Python dependencies:
-```bash
-pdm install
-```
-
-## Development
-
-To run both frontend and backend development servers:
+Run both frontend and backend development servers:
 
 ```bash
 pdm run dev
 ```
 
 This will:
-- Install frontend dependencies automatically (if needed)
+- Install both backend and frontend dependencies automatically
 - Start frontend server at http://localhost:3000 (Next.js development server)
 - Start backend server at http://localhost:8000 (FastAPI with auto-reload)
 
@@ -79,11 +72,12 @@ llama-agent/
 
 ## Features
 
-- Modern frontend with Next.js 14 App Router
+- Modern frontend with Next.js 15 and React 19
 - Type-safe development with TypeScript
 - Fast and efficient API with FastAPI
+- LlamaIndex integration for building AI agent workflows
 - Development and production server configurations
-- Tailwind CSS for styling
+- Modern UI with Tailwind CSS 3.4
 - Efficient package management with PDM and PNPM
 - Hot reloading for both frontend and backend in development
 
