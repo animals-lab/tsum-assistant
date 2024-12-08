@@ -56,8 +56,8 @@ class SimpleAgent(Workflow):
 
         ctx.write_event_to_stream(
             AgentRunEvent(
-                name="Researcher",
-                msg="Finding answers for missing cells",
+                name="TestAgent",
+                msg="This is a test message",
             )
         )
 

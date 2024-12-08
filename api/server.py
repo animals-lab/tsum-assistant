@@ -5,6 +5,7 @@ from typing import List, Dict, AsyncGenerator
 import logging
 import json
 from .routers.vercel import VercelStreamResponse
+from .routers.test_stream import test_stream
 from app.agent import SimpleAgent
 
 # Set up logging
@@ -25,11 +26,8 @@ async def generate_agent_response(message: str) -> AsyncGenerator[str, None]:
     agent = SimpleAgent(timeout=30, verbose=True)
     result = await agent.run(input=message)
     
-    # Stream initial text content
-    yield VercelStreamResponse.text_part(result)
-    
-    # Send completion signal
-    yield VercelStreamResponse.finish_message()
+    # Stream the response
+    yield result
     
 @app.get("/api/health")
 async def health_check():
@@ -59,4 +57,7 @@ async def chat(request: Request):
     except Exception as e:
         logger.error(f"Error occurred: {str(e)}")
         raise
+
+# Add test stream endpoint
+app.post("/api/test-stream")(test_stream)
 

@@ -21,7 +21,16 @@ export function Chat() {
     stop,
   } = useChat({
     maxSteps: 4,
+    api: "/api/test-stream",
+    onResponse: (response) => {
+      console.log("Stream response:", response);
+      // No need to manually handle messages here, useChat will do it
+    },
+    onFinish: (message) => {
+      console.log("Stream finished, final message:", message);
+    },
     onError: (error) => {
+      console.error("Chat error:", error);
       if (error.message.includes("Too many requests")) {
         toast.error(
           "You are sending too many messages. Please try again later.",
@@ -29,6 +38,8 @@ export function Chat() {
       }
     },
   });
+
+  console.log("Current messages:", messages);
 
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
