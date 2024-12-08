@@ -5,11 +5,9 @@ import remarkGfm from "remark-gfm";
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   const components: Partial<Components> = {
-    // @ts-expect-error
-    code: ({ node, inline, className, children, ...props }) => {
+    code: ({ node, inline, className, children, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || "");
       return !inline && match ? (
-        // @ts-expect-error
         <pre
           {...props}
           className={`${className} text-sm w-[80dvw] md:max-w-[500px] overflow-x-scroll bg-zinc-100 p-3 rounded-lg mt-2 dark:bg-zinc-800 whitespace-pre-wrap break-words`}
@@ -53,9 +51,8 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
         </span>
       );
     },
-    a: ({ node, children, ...props }) => {
+    a: ({ node, children, ...props }: any) => {
       return (
-        // @ts-expect-error
         <Link
           className="text-blue-500 hover:underline break-words"
           target="_blank"
