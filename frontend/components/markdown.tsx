@@ -12,13 +12,13 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
         // @ts-expect-error
         <pre
           {...props}
-          className={`${className} text-sm w-[80dvw] md:max-w-[500px] overflow-x-scroll bg-zinc-100 p-3 rounded-lg mt-2 dark:bg-zinc-800`}
+          className={`${className} text-sm w-[80dvw] md:max-w-[500px] overflow-x-scroll bg-zinc-100 p-3 rounded-lg mt-2 dark:bg-zinc-800 whitespace-pre-wrap break-words`}
         >
           <code className={match[1]}>{children}</code>
         </pre>
       ) : (
         <code
-          className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md`}
+          className={`${className} text-sm bg-zinc-100 dark:bg-zinc-800 py-0.5 px-1 rounded-md inline break-words whitespace-normal`}
           {...props}
         >
           {children}
@@ -27,28 +27,28 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
     },
     ol: ({ node, children, ...props }) => {
       return (
-        <ol className="list-decimal list-outside ml-4" {...props}>
+        <ol className="list-decimal list-outside ml-4 break-words" {...props}>
           {children}
         </ol>
       );
     },
     li: ({ node, children, ...props }) => {
       return (
-        <li className="py-1" {...props}>
+        <li className="py-1 break-words" {...props}>
           {children}
         </li>
       );
     },
     ul: ({ node, children, ...props }) => {
       return (
-        <ul className="list-decimal list-outside ml-4" {...props}>
+        <ul className="list-disc list-outside ml-4 break-words" {...props}>
           {children}
         </ul>
       );
     },
     strong: ({ node, children, ...props }) => {
       return (
-        <span className="font-semibold" {...props}>
+        <span className="font-semibold break-words" {...props}>
           {children}
         </span>
       );
@@ -57,7 +57,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
       return (
         // @ts-expect-error
         <Link
-          className="text-blue-500 hover:underline"
+          className="text-blue-500 hover:underline break-words"
           target="_blank"
           rel="noreferrer"
           {...props}
