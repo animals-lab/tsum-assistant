@@ -25,8 +25,11 @@ async def generate_agent_response(message: str) -> AsyncGenerator[str, None]:
     agent = SimpleAgent(timeout=30, verbose=True)
     result = await agent.run(input=message)
     
-    # Stream the response
-    yield result
+    # Stream initial text content
+    yield VercelStreamResponse.text_part(result)
+    
+    # Send completion signal
+    yield VercelStreamResponse.finish_message()
     
 @app.get("/api/health")
 async def health_check():
