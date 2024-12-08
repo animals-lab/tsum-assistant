@@ -49,47 +49,21 @@ export const PreviewMessage = ({
             </div>
           )}
 
-          {/* Data parts from stream */}
-          {(message as any).data?.map((item: any, index: number) => (
-            <div key={index} className="flex flex-col gap-4">
-              {item.messages?.map((msg: any, msgIndex: number) => (
-                <div key={msgIndex}>
-                  <Markdown>{msg.content}</Markdown>
-                </div>
-              ))}
-              {item.text && <Markdown>{item.text}</Markdown>}
-            </div>
-          ))}
-
-          {/* Tool invocations */}
-          {(message as any).toolInvocations?.map((toolInvocation: any, index: number) => (
-            <div key={toolInvocation.toolCallId} className="bg-muted p-4 rounded-lg">
-              <div className="font-mono text-sm text-muted-foreground">
-                Tool: {toolInvocation.toolName}
-              </div>
-              <div className="font-mono text-sm mt-2 text-muted-foreground">
-                Arguments: {JSON.stringify(toolInvocation.args, null, 2)}
-              </div>
-              {'result' in toolInvocation && (
-                <div className="font-mono text-sm mt-2 text-muted-foreground border-t border-muted-foreground/20 pt-2">
-                  Result: {JSON.stringify(toolInvocation.result, null, 2)}
-                </div>
-              )}
-            </div>
-          ))}
-
           {/* Message annotations */}
           {(message as any).annotations?.map((annotation: any, index: number) => {
             if (annotation.type === "code") {
               return (
-                <div key={annotation.id || index} className="bg-muted p-4 rounded-lg">
+                <div key={annotation.id || index} className="bg-[#1e1e1e] p-4 rounded-lg border border-[#323232] shadow-sm">
                   {annotation.language && (
-                    <div className="font-mono text-sm text-muted-foreground mb-2">
-                      {annotation.language}
+                    <div className="font-mono text-sm text-[#858585] mb-2 flex items-center justify-between">
+                      <span>{annotation.language}</span>
+                      <span className="text-xs px-2 py-0.5 rounded bg-[#323232] text-[#858585]">VS Code Dark+</span>
                     </div>
                   )}
-                  <pre className="font-mono text-sm whitespace-pre-wrap overflow-x-auto">
-                    <code>{annotation.code}</code>
+                  <pre className="font-mono text-sm whitespace-pre-wrap overflow-x-auto break-all">
+                    <code className="text-[#d4d4d4] [&_.keyword]:text-[#569cd6] [&_.string]:text-[#ce9178] [&_.function]:text-[#dcdcaa] [&_.number]:text-[#b5cea8] [&_.comment]:text-[#6a9955] hyphens-auto break-words">
+                      {annotation.code}
+                    </code>
                   </pre>
                 </div>
               );
@@ -105,6 +79,30 @@ export const PreviewMessage = ({
 
             return null;
           })}
+
+          {/* Tool invocations */}
+          {(message as any).toolInvocations?.map((toolInvocation: any, index: number) => (
+            <div key={toolInvocation.toolCallId} 
+              className="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="font-mono text-sm text-slate-700 flex items-center gap-2 mb-1">
+                <div className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-semibold">Tool:</span> {toolInvocation.toolName}
+              </div>
+              <div className="font-mono text-sm mt-3 bg-white p-3 rounded border border-slate-100">
+                <div className="text-slate-600">
+                  <span className="font-semibold text-slate-700">Arguments:</span>
+                  <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.args, null, 2)}</pre>
+                </div>
+                {'result' in toolInvocation && (
+                  <div className="mt-3 pt-3 border-t border-slate-100">
+                    <span className="font-semibold text-slate-700">Result:</span>
+                    <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.result, null, 2)}</pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
 
           {message.experimental_attachments && (
             <div className="flex flex-row gap-2">
