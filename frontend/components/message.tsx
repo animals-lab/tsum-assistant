@@ -7,6 +7,13 @@ import { Markdown } from "./markdown";
 import { PreviewAttachment } from "./preview-attachment";
 import { cn } from "@/lib/utils";
 
+interface MessagePart {
+  type: 'text' | 'tool' | 'annotation';
+  content: any;
+  order: number;
+  messageId?: string;
+}
+
 export const PreviewMessage = ({
   message,
   chatId,
@@ -16,12 +23,62 @@ export const PreviewMessage = ({
   message: Message;
   isLoading: boolean;
 }) => {
-  console.log("Rendering message:", {
+  console.log("Message:", {
+    id: message.id,
     role: message.role,
     content: message.content,
-    id: message.id,
-    data: (message as any).data,
+    annotations: (message as any).annotations?.map((a: any) => ({
+      type: a.type,
+      messageId: a.messageId,
+      id: a.id
+    })),
+    toolInvocations: (message as any).toolInvocations?.map((t: any) => ({
+      id: t.toolCallId,
+      messageId: t.messageId,
+      name: t.toolName
+    }))
   });
+
+  // Organize message parts in correct sequence
+  const messageParts: MessagePart[] = [];
+  let order = 0;
+
+  // Add text content first
+  if (message.content) {
+    messageParts.push({
+      type: 'text',
+      content: message.content,
+      order: order++,
+      messageId: message.id
+    });
+  }
+
+  // Add tool invocations next
+  if ((message as any).toolInvocations) {
+    (message as any).toolInvocations.forEach((tool: any) => {
+      messageParts.push({
+        type: 'tool',
+        content: tool,
+        order: order++,
+        messageId: message.id
+      });
+    });
+  }
+
+  // Add annotations
+  if ((message as any).annotations) {
+    (message as any).annotations.forEach((annotation: any) => {
+      messageParts.push({
+        type: 'annotation',
+        content: annotation,
+        order: order++,
+        messageId: message.id
+      });
+    });
+  }
+
+  // Sort parts by order
+  const sortedParts = messageParts.sort((a, b) => a.order - b.order);
 
   return (
     <motion.div
@@ -30,6 +87,13 @@ export const PreviewMessage = ({
       animate={{ y: 0, opacity: 1 }}
       data-role={message.role}
     >
+      {/* Debug info */}
+      <div className="text-xs text-slate-500 mb-2 font-mono">
+        Message ID: {message.id}
+        <br />
+        Parts: {sortedParts.map(p => p.type).join(', ')}
+      </div>
+
       <div
         className={cn(
           "group-data-[role=user]/message:bg-primary group-data-[role=user]/message:text-primary-foreground flex gap-4 group-data-[role=user]/message:px-3 w-full group-data-[role=user]/message:w-fit group-data-[role=user]/message:ml-auto group-data-[role=user]/message:max-w-2xl group-data-[role=user]/message:py-2 rounded-xl",
@@ -42,67 +106,75 @@ export const PreviewMessage = ({
         )}
 
         <div className="flex flex-col gap-2 w-full">
-          {/* Regular message content */}
-          {message.content && (
-            <div className="flex flex-col gap-4">
-              <Markdown>{message.content}</Markdown>
-            </div>
-          )}
-
-          {/* Message annotations */}
-          {(message as any).annotations?.map((annotation: any, index: number) => {
-            if (annotation.type === "code") {
+          {sortedParts.map((part, index) => {
+            if (part.type === 'text') {
               return (
-                <div key={annotation.id || index} className="bg-[#1e1e1e] p-4 rounded-lg border border-[#323232] shadow-sm">
-                  {annotation.language && (
-                    <div className="font-mono text-sm text-[#858585] mb-2 flex items-center justify-between">
-                      <span>{annotation.language}</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-[#323232] text-[#858585]">VS Code Dark+</span>
-                    </div>
-                  )}
-                  <pre className="font-mono text-sm whitespace-pre-wrap overflow-x-auto break-all">
-                    <code className="text-[#d4d4d4] [&_.keyword]:text-[#569cd6] [&_.string]:text-[#ce9178] [&_.function]:text-[#dcdcaa] [&_.number]:text-[#b5cea8] [&_.comment]:text-[#6a9955] hyphens-auto break-words">
-                      {annotation.code}
-                    </code>
-                  </pre>
+                <div key={`text-${index}`} className="flex flex-col gap-4">
+                  <Markdown>{part.content}</Markdown>
                 </div>
               );
             }
 
-            if (annotation.type === "markdown") {
+            if (part.type === 'tool') {
+              const toolInvocation = part.content;
               return (
-                <div key={annotation.id || index} className="prose dark:prose-invert max-w-none">
-                  <Markdown>{annotation.content}</Markdown>
+                <div key={`tool-${toolInvocation.toolCallId}`} 
+                  className="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="text-xs text-slate-400 mb-1">Tool ID: {toolInvocation.toolCallId}</div>
+                  <div className="font-mono text-sm text-slate-700 flex items-center gap-2 mb-1">
+                    <div className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="font-semibold">Tool:</span> {toolInvocation.toolName}
+                  </div>
+                  <div className="font-mono text-sm mt-3 bg-white p-3 rounded border border-slate-100">
+                    <div className="text-slate-600">
+                      <span className="font-semibold text-slate-700">Arguments:</span>
+                      <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.args, null, 2)}</pre>
+                    </div>
+                    {'result' in toolInvocation && (
+                      <div className="mt-3 pt-3 border-t border-slate-100">
+                        <span className="font-semibold text-slate-700">Result:</span>
+                        <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.result, null, 2)}</pre>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
+            }
+
+            if (part.type === 'annotation') {
+              const annotation = part.content;
+              if (annotation.type === "code") {
+                return (
+                  <div key={`code-${annotation.id || index}`} className="bg-[#1e1e1e] p-4 rounded-lg border border-[#323232] shadow-sm">
+                    <div className="text-xs text-[#858585] mb-1">Annotation ID: {annotation.id}</div>
+                    {annotation.language && (
+                      <div className="font-mono text-sm text-[#858585] mb-2 flex items-center justify-between">
+                        <span>{annotation.language}</span>
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#323232] text-[#858585]">VS Code Dark+</span>
+                      </div>
+                    )}
+                    <pre className="font-mono text-sm whitespace-pre-wrap overflow-x-auto break-all">
+                      <code className="text-[#d4d4d4] [&_.keyword]:text-[#569cd6] [&_.string]:text-[#ce9178] [&_.function]:text-[#dcdcaa] [&_.number]:text-[#b5cea8] [&_.comment]:text-[#6a9955] hyphens-auto break-words">
+                        {annotation.code}
+                      </code>
+                    </pre>
+                  </div>
+                );
+              }
+
+              if (annotation.type === "markdown") {
+                return (
+                  <div key={`markdown-${annotation.id || index}`} className="prose dark:prose-invert max-w-none">
+                    <div className="text-xs text-slate-400 mb-1">Annotation ID: {annotation.id}</div>
+                    <Markdown>{annotation.content}</Markdown>
+                  </div>
+                );
+              }
             }
 
             return null;
           })}
-
-          {/* Tool invocations */}
-          {(message as any).toolInvocations?.map((toolInvocation: any, index: number) => (
-            <div key={toolInvocation.toolCallId} 
-              className="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="font-mono text-sm text-slate-700 flex items-center gap-2 mb-1">
-                <div className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-semibold">Tool:</span> {toolInvocation.toolName}
-              </div>
-              <div className="font-mono text-sm mt-3 bg-white p-3 rounded border border-slate-100">
-                <div className="text-slate-600">
-                  <span className="font-semibold text-slate-700">Arguments:</span>
-                  <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.args, null, 2)}</pre>
-                </div>
-                {'result' in toolInvocation && (
-                  <div className="mt-3 pt-3 border-t border-slate-100">
-                    <span className="font-semibold text-slate-700">Result:</span>
-                    <pre className="mt-1 text-slate-600 whitespace-pre-wrap break-all hyphens-auto">{JSON.stringify(toolInvocation.result, null, 2)}</pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
 
           {message.experimental_attachments && (
             <div className="flex flex-row gap-2">
