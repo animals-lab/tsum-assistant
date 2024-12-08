@@ -4,58 +4,113 @@ from asyncio.subprocess import Process
 from pathlib import Path
 import sys
 from subprocess import CalledProcessError, run
-from shutil import which
+from shutil import which, copyfile
 
-FRONTEND_DIR = ".frontend"
+FRONTEND_DIR = "frontend-new"
 
-def _get_node_package_manager() -> str:
+def _setup_frontend_config():
+    """Setup frontend configuration files"""
+    # Create .npmrc if it doesn't exist
+    npmrc_file = Path(FRONTEND_DIR) / ".npmrc"
+    if not npmrc_file.exists():
+        with open(npmrc_file, "w") as f:
+            f.write("node-options=--no-warnings\n")
+    
+    # Create root .env if it doesn't exist
+    env_file = Path(".env")
+    if not env_file.exists():
+        with open(env_file, "w") as f:
+            f.write("# Frontend settings\n")
+            f.write("NEXT_PUBLIC_APP_URL=http://localhost:3000\n\n")
+            f.write("# Backend settings\n")
+            f.write("OPENAI_API_KEY=\n")
+
+def _check_pnpm() -> str:
     """
-    Check for available package managers and return the preferred one.
-    Returns 'pnpm' if installed, falls back to 'npm'.
-    Raises SystemError if neither is installed.
+    Check if pnpm is installed.
+    Returns pnpm path if installed, raises SystemError if not.
     """
     pnpm_cmds = ["pnpm", "pnpm.cmd"]
-    npm_cmds = ["npm", "npm.cmd"]
 
     for cmd in pnpm_cmds:
         cmd_path = which(cmd)
         if cmd_path is not None:
             return cmd_path
 
-    for cmd in npm_cmds:
-        cmd_path = which(cmd)
-        if cmd_path is not None:
-            return cmd_path
-
     raise SystemError(
-        "Neither pnpm nor npm is installed. Please install Node.js and a package manager first."
+        "pnpm is not installed. Please install pnpm first: https://pnpm.io/installation"
     )
 
 def _install_frontend_dependencies():
-    """Install frontend dependencies using the available package manager"""
-    package_manager = _get_node_package_manager()
-    print(f"\nInstalling frontend dependencies using {Path(package_manager).name}...")
-    run([package_manager, "install"], cwd=FRONTEND_DIR, check=True)
+    """Install frontend dependencies using pnpm"""
+    _setup_frontend_config()
+    pnpm = _check_pnpm()
+    print(f"\nInstalling frontend dependencies using pnpm...")
+    
+    # Set environment variables from root .env
+    env = os.environ.copy()
+    if Path(".env").exists():
+        with open(".env") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    env[key] = value
+    
+    run([pnpm, "install"], cwd=FRONTEND_DIR, check=True, env=env)
+
+def _install_backend_dependencies():
+    """Install backend dependencies using PDM"""
+    print("\nChecking backend dependencies with PDM...")
+    try:
+        run(["pdm", "install"], check=True)
+    except CalledProcessError as e:
+        print(f"Error installing backend dependencies: {str(e)}")
+        sys.exit(1)
+    except FileNotFoundError:
+        print("PDM not found. Please install PDM first.")
+        sys.exit(1)
 
 async def start_frontend_dev():
     """Start the Next.js development server"""
     _install_frontend_dependencies()
     
+    # Set environment variables from root .env
+    env = os.environ.copy()
+    if Path(".env").exists():
+        with open(".env") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    env[key] = value
+    
     process = await asyncio.create_subprocess_shell(
         f"cd {FRONTEND_DIR} && pnpm dev",
         stdout=sys.stdout,
         stderr=sys.stderr,
-        shell=True
+        shell=True,
+        env=env
     )
     return process
 
 async def start_backend_dev():
-    """Start the FastAPI development server"""
+    """Start the FastAPI development server with reload enabled"""
+    _install_backend_dependencies()
+    
+    # Set environment variables from root .env
+    env = os.environ.copy()
+    if Path(".env").exists():
+        with open(".env") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    env[key] = value
+    
     process = await asyncio.create_subprocess_shell(
-        "uvicorn api.main:app --reload --port 8000",
+        "pdm run uvicorn api.server:app --reload --host 0.0.0.0 --port 8000",
         stdout=sys.stdout,
         stderr=sys.stderr,
-        shell=True
+        shell=True,
+        env=env
     )
     return process
 
@@ -82,11 +137,23 @@ async def start_development_servers():
 
 async def start_production_server():
     """Start the production server"""
+    _install_backend_dependencies()
+    
+    # Set environment variables from root .env
+    env = os.environ.copy()
+    if Path(".env").exists():
+        with open(".env") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    env[key] = value
+    
     process = await asyncio.create_subprocess_shell(
-        "uvicorn api.main:app --host 0.0.0.0 --port 8000",
+        "pdm run uvicorn api.server:app --host 0.0.0.0 --port 8000",
         stdout=sys.stdout,
         stderr=sys.stderr,
-        shell=True
+        shell=True,
+        env=env
     )
     try:
         await process.wait()
