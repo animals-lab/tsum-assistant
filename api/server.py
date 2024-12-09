@@ -37,7 +37,7 @@ async def chat(request: Request):
         user_message = body.get("messages", [{}])[-1].get("content", "")
         
         # Create response generator
-        workflow = StubWorkflow().run(input=user_message, streaming=True)
+        workflow = StubWorkflow(timeout=30).run(input=user_message, streaming=True)
         
         # Create Vercel stream response
         response = VercelStreamResponse(

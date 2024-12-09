@@ -84,6 +84,8 @@ class VercelStreamResponse(StreamingResponse):
                         for token in content:
                             final_response += str(token)
                             yield self.convert_text(token)
+                else:
+                    yield self.convert_text(result)
 
             # Generate next questions if next question prompt is configured
             # question_data = await self._generate_next_questions(
