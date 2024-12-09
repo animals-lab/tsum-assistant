@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:1372029dacd47d861684985e00252f3cc5cdac5310ba7355a2249cbcb1bc72ae"
+content_hash = "sha256:a8cc4d9fd64756afaa6067d38fb7528ee4c36cd3c977273dfd1e5ecc73863c31"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -68,6 +68,20 @@ dependencies = [
 files = [
     {file = "aiosignal-1.3.1-py3-none-any.whl", hash = "sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17"},
     {file = "aiosignal-1.3.1.tar.gz", hash = "sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc"},
+]
+
+[[package]]
+name = "aiostream"
+version = "0.6.4"
+requires_python = ">=3.9"
+summary = "Generator-based operators for asynchronous iteration"
+groups = ["default"]
+dependencies = [
+    "typing-extensions",
+]
+files = [
+    {file = "aiostream-0.6.4-py3-none-any.whl", hash = "sha256:bd8c6a8b90a52c0325a3b19406f0f2a131448e596c06398886f5be1c73b4cea9"},
+    {file = "aiostream-0.6.4.tar.gz", hash = "sha256:f99bc6b1b9cea3e70885dc235a233523597555fe4a585ed21d65264b3f1ff3d2"},
 ]
 
 [[package]]

@@ -1,12 +1,11 @@
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { GeistSans } from "geist/font/sans";
-import { Toaster } from "sonner";
-import { cn } from "@/lib/utils";
-import type { Metadata } from 'next'
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "AI Chat",
-  description: "AI Chat Interface"
+  title: "Tsum Chat",
 };
 
 export default function RootLayout({
@@ -16,10 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={cn(GeistSans.className, "antialiased")}>
-        <Toaster position="top-center" richColors />
-        {children}
-      </body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }

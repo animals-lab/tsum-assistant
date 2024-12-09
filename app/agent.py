@@ -4,6 +4,7 @@ from llama_index.llms.openai import OpenAI
 from enum import Enum
 from typing import Optional
 
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -15,6 +16,8 @@ from llama_index.core.workflow import (
     Context,
     Event,
 )
+
+import asyncio
 
 system_prompt = """
 You are a helpful assistant

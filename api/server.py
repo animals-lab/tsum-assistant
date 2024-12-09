@@ -7,6 +7,7 @@ import json
 from .routers.vercel import VercelStreamResponse
 from .routers.test_stream import test_stream
 from app.agent import SimpleAgent
+from app.stub_workflow import StubWorkflow
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -21,13 +22,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-async def generate_agent_response(message: str) -> AsyncGenerator[str, None]:
-    agent = SimpleAgent(timeout=30, verbose=True)
-    result = await agent.run(input=message)
-    
-    # Stream the response
-    yield result
     
 @app.get("/api/health")
 async def health_check():
@@ -43,12 +37,13 @@ async def chat(request: Request):
         user_message = body.get("messages", [{}])[-1].get("content", "")
         
         # Create response generator
-        response_generator = generate_agent_response(user_message)
+        workflow = StubWorkflow().run(input=user_message, streaming=True)
         
         # Create Vercel stream response
         response = VercelStreamResponse(
             request=request,
-            response_generator=response_generator,
+            event_handler=workflow,
+            events = workflow.stream_events()
         )
         
         logger.info("Streaming response initiated")
