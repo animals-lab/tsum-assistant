@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/ui-utils": "^0.0.20",
+    "@llamaindex/chat-ui": "^0.0.13",
     "@radix-ui/react-slot": "^1.1.0",
     "@types/node": "20.2.4",
     "@types/react": "^19",

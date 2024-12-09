@@ -7,53 +7,102 @@ import json
 async def generate_test_messages() -> AsyncGenerator[str, None]:
     """Generate test messages in various Vercel Stream Protocol formats"""
     
-    # Initial response with text format
-    yield '0:"Let me analyze your code and suggest some improvements. First, I\'ll check the code structure."\n'
-    await asyncio.sleep(1)
+    def format_message(content: str, message_type: str = "text") -> str:
+        if message_type == "text":
+            return f'0:"{content}"\n'
+        elif message_type == "tool_call":
+            return f'9:{json.dumps(content)}\n'
+        elif message_type == "tool_result":
+            return f'a:{json.dumps(content)}\n'
+        elif message_type == "markdown":
+            return f'8:{json.dumps([{"type": "markdown", "content": content}])}\n'
+        elif message_type == "annotations":
+            return f'8:{json.dumps(content)}\n'
+        return ""
     
-    # Code analysis tool call
+    # Initial message with completion
+    yield format_message("Hello, let's start with a simple task.")
+    yield 'e:{"finishReason":"stop", "usage":{"promptTokens":100,"completionTokens":150},"isContinued":true}\n'
+    await asyncio.sleep(0.5)
+
+    # Tool call
     tool_call = {
         "toolCallId": "analyze_1",
-        "toolName": "analyze_code_structure",
+        "toolName": "analyze_code",
         "args": {
-            "path": "./src",
-            "include_patterns": ["*.ts", "*.tsx"]
+            "code": "sample code",
+            "language": "python"
         }
     }
-    yield f'9:{json.dumps(tool_call)}\n'
-    await asyncio.sleep(2)
-    
-    # Tool result with findings
+    yield format_message(tool_call, "tool_call")
+    yield 'e:{"finishReason":"tool_calls","usage":{"promptTokens":100,"completionTokens":150},"isContinued":true}\n'
+    await asyncio.sleep(0.5)
+
+    # Tool result
     tool_result = {
         "toolCallId": "analyze_1",
         "result": {
-            "files": 15,
-            "components": 8,
-            "hooks": 4,
-            "issues": ["Missing type definitions", "Inconsistent import style"]
+            "analysis": "Code analysis complete",
+            "suggestions": ["Suggestion 1", "Suggestion 2"]
         }
     }
-    yield f'a:{json.dumps(tool_result)}\n'
-    await asyncio.sleep(1)
+    yield format_message(tool_result, "tool_result")
+    yield 'e:{"finishReason":"tool_calls","usage":{"promptTokens":100,"completionTokens":150},"isContinued":true}\n'
+    await asyncio.sleep(0.5)
+
+    # Add annotations (code block, markdown, and image)
+    annotations = [
+        {
+            "type": "code",
+            "id": "code-1",
+            "language": "python",
+            "code": """def example_function():
+    # This is a sample code block
+    print("Hello, World!")
     
-    # Analysis summary with markdown
-    markdown = [{
-        "id": "summary_1",
-        "type": "markdown",
-        "content": "# Code Analysis Results\n\n## Structure Overview\n- Total Files: 15\n- React Components: 8\n- Custom Hooks: 4\n\n## Identified Issues\n- ⚠️ Missing type definitions\n- 🔧 Inconsistent import style"
-    }]
-    yield f'8:{json.dumps(markdown)}\n'
-    yield 'e:{"finishReason":"stop","usage":{"promptTokens":50,"completionTokens":80},"isContinued":false}\n'
-    await asyncio.sleep(1)
+    # Using some keywords
+    for i in range(10):
+        if i % 2 == 0:
+            print(f"Number {i} is even")
+            """
+        },
+        {
+            "type": "markdown",
+            "id": "md-1",
+            "content": """# Example ANNOTATIONS
+## Features
+- **Bold text** for emphasis
+- *Italic text* for style
+- `inline code` for technical terms
+
+### Code Example
+```python
+print("Hello from markdown!")
+```"""
+        },
+        {
+            "type": "image",
+            "id": "img-1",
+            "url": "https://picsum.photos/200/300",
+            "title": "Sample Image",
+            "caption": "This is a sample image from Lorem Picsum"
+        }
+    ]
     
-    # Final message with text format
-    yield '0:"Would you like me to continue with fixing the import style issues next?"\n'
-    yield 'e:{"finishReason":"stop","usage":{"promptTokens":20,"completionTokens":30},"isContinued":false}\n'
-    yield 'd:{"finishReason":"stop","usage":{"promptTokens":150,"completionTokens":280}}\n'
+    yield format_message(annotations, "annotations")
+    yield 'e:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":150},"isContinued":true}\n'
+    await asyncio.sleep(1.5)
+
+    # Final response with completion
+    yield format_message("Here are the suggestions for improving your code, along with some examples and documentation. Would you like to proceed with implementing them?")
+    yield 'd:{"finishReason":"stop","usage":{"promptTokens":100,"completionTokens":150}}\n'
+
 
 async def test_stream(request: Request):
     """Test endpoint that generates various types of Vercel stream messages"""
-    print("DEBUG: Starting test stream")
+    request_id = id(request)  # Get a unique ID for this request
+    print(f"DEBUG: Starting test stream for request {request_id}")
+    
     response_generator = generate_test_messages()
     
     return VercelStreamResponse(
