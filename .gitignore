@@ -167,3 +167,4 @@ node_modules
 package-lock.json
 .DS_Store
 .pdm-python
+.DS_Store
