@@ -432,7 +432,7 @@ class ConciergeAgent(Workflow):
             # )
             AgentRunEvent(
                 name=tool_call.tool_name,
-                msg=f"Запускаем агента",
+                msg=f"Запускаем агента {selected_agent}",
             )
         )
 
