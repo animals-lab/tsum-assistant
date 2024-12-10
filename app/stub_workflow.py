@@ -63,6 +63,7 @@ class StubWorkflow(Workflow):
                 msg="Привлекаем экспертов",
             )
         )
+        await asyncio.sleep(1)
         return InputEvent()
 
     @step
@@ -74,12 +75,30 @@ class StubWorkflow(Workflow):
             )
         )
         await asyncio.sleep(2)
+
+        for i in range(4):
+            await asyncio.sleep(1)
+            ctx.write_event_to_stream(
+                AgentRunEvent(
+                    name="Поиск",
+                    msg="Собираем информацию",
+                    event_type=AgentRunEventType.PROGRESS,
+                    data={
+                        "id": 0,
+                        "total": 3,
+                        "current": i,
+                    },
+                )
+            )
+
+
         ctx.write_event_to_stream(
             AgentRunEvent(
                 name="Поиск",
                 msg="Прочитали статьи и собрали информацию",
             )
         )
+        await asyncio.sleep(2)
         return ResearchEvent()
 
     @step
@@ -120,7 +139,7 @@ class StubWorkflow(Workflow):
 
 
 async def main():
-    w = StubWorkflow(timeout=30, verbose=True)
+    w = StubWorkflow(timeout=5000, verbose=True)
     handler = w.run(first_input="Что модно в Южной Корее?")
 
     async for ev in handler.stream_events():

@@ -2,17 +2,17 @@
 
 import { Check, ChevronDown, Code, Copy, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button, buttonVariants } from "../../button";
+import { Button, buttonVariants } from "@/app/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../../collapsible";
-import { cn } from "../../lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
-import { Markdown } from "../custom/markdown";
-import { useClientConfig } from "../hooks/use-config";
-import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard";
+} from "@/app/components/ui/collapsible";
+import { cn } from "@/app/components/ui/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
+import { Markdown } from "@/app/components/ui/custom/markdown";
+import { useClientConfig } from "@/app/components/ui/hooks/use-config";
+import { useCopyToClipboard } from "@/app/components/ui/hooks/use-copy-to-clipboard";
 
 // detail information to execute code
 export type CodeArtifact = {

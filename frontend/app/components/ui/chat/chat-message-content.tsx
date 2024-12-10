@@ -5,8 +5,8 @@ import {
   useChatMessage,
   useChatUI,
 } from "@llamaindex/chat-ui";
-import { Markdown } from "./custom/markdown";
-import { ToolAnnotations } from "./tools/chat-tools";
+import { Markdown } from "../custom/markdown";
+import { ToolAnnotations } from "../tools/chat-tools";
 
 export function ChatMessageContent() {
   const { isLoading, append } = useChatUI();

@@ -124,3 +124,12 @@
     animation: slideIn 0.5s ease-out;
   }
 }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

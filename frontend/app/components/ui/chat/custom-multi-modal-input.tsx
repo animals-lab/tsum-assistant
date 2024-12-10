@@ -12,12 +12,11 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
+import { cn, sanitizeUIMessages } from "@/app/components/ui/lib/utils";
 
-import { cn, sanitizeUIMessages } from "@/lib/utils";
-
-import { ArrowUpIcon, StopIcon } from "./icons";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import { ArrowUpIcon, StopIcon } from "@/app/components/ui/icons";
+import { Button } from "@/app/components/ui/button";
+import { Textarea } from "@/app/components/ui/textarea";
 
 const suggestedActions = [
   {
@@ -115,7 +114,7 @@ export function MultimodalInput({
   }, [handleSubmit, setLocalStorageInput, width]);
 
   return (
-    <div className="relative w-full flex flex-col gap-4 p-8">
+    <div className="relative w-full flex flex-col gap-4">
       {messages.length === 0 && (
         <div className="grid sm:grid-cols-2 gap-2 w-full">
           {suggestedActions.map((suggestedAction, index) => (
@@ -135,7 +134,7 @@ export function MultimodalInput({
                     content: suggestedAction.action,
                   });
                 }}
-                className="text-left border rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
+                className="text-left rounded-xl px-4 py-3.5 text-sm flex-1 gap-1 sm:flex-col w-full h-auto justify-start items-start"
               >
                 <span className="font-medium">{suggestedAction.title}</span>
                 <span className="text-muted-foreground">
@@ -149,11 +148,11 @@ export function MultimodalInput({
 
       <Textarea
         ref={textareaRef}
-        placeholder="Send a message..."
+        placeholder="Введите сообщение..."
         value={input}
         onChange={handleInput}
         className={cn(
-          "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base",
+          "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base bg-gray-100/50 border-none",
           className,
         )}
         rows={3}
@@ -173,7 +172,7 @@ export function MultimodalInput({
 
       {isLoading ? (
         <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-10 right-10 m-0.5 border dark:border-zinc-600"
+          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 dark:border-zinc-600"
           onClick={(event) => {
             event.preventDefault();
             stop();
@@ -184,7 +183,7 @@ export function MultimodalInput({
         </Button>
       ) : (
         <Button
-          className="rounded-full p-1.5 h-fit absolute bottom-10 right-10 m-0.5 border dark:border-zinc-600"
+          className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 dark:border-zinc-600"
           onClick={(event) => {
             event.preventDefault();
             submitForm();
