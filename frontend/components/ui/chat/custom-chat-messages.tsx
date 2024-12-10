@@ -39,7 +39,7 @@ export function CustomChatMessages() {
                 {(!message.isUser && !agentEvents.length) || message.isUser ? (
                   <div className={`flex items-start space-x-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
                     {message.role !== 'user' && <ChatMessageAvatar />}
-                    <div className="!bg-[#808080] text-white flex-initial rounded-2xl p-4">
+                    <div className={`${message.role === 'user' ? '!bg-[#808080] text-white' : 'bg-transparent text-gray-900'} flex-initial rounded-2xl p-4`}>
                       <CustomMessageContent />
                     </div>
                   </div>
