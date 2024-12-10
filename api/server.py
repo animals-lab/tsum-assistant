@@ -300,12 +300,25 @@ async def chat_endpoint(request: Request):
                 logger.error(traceback.format_exc())
                 raise e
 
-        return VercelStreamResponse(request, event_stream())
+        event_handler = agent.run(
+            user_msg=user_message,
+            agent_configs=get_agent_configs(),
+            llm=llm,
+            chat_history=memory.get(),
+            initial_state=get_initial_state(),
+            streaming=True,
+        )
+        
+        return VercelStreamResponse(
+            request=request,
+            # chat_data=data,
+            event_handler=event_handler,
+            events=agent.stream_events(),
+        )
+
+        return VercelStreamResponse(request, agent.event)
 
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
         logger.error(traceback.format_exc())
-        return JSONResponse(
-            content={"error": str(e)},
-            status_code=500
-        )
+        return JSONResponse(content={"error": str(e)}, status_code=500)
