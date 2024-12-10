@@ -24,8 +24,9 @@ from llama_index.llms.openai import OpenAI
 
 from .utils import FunctionToolWithContext
 
-from llama_index.core import get_response_synthesizer
+from .workflow_events import AgentRunEvent, AgentRunEventType, ProgressEvent
 
+# from llama_index.core import get_response_synthesizer
 # synth = get_response_synthesizer(streaming=True)
 
 
@@ -93,10 +94,6 @@ class ToolApprovedEvent(HumanResponseEvent):
     tool_kwargs: dict
     approved: bool
     response: str | None = None
-
-
-class ProgressEvent(Event):
-    msg: str
 
 
 # ---- Workflow ----
@@ -326,6 +323,15 @@ class ConciergeAgent(Workflow):
                 content=f"Tool {tool_call.tool_name} does not exist",
                 additional_kwargs=additional_kwargs,
             )
+        ctx.write_event_to_stream(
+            # ProgressEvent(
+            #     msg=f"Tool {tool_call.tool_name} called with {tool_call.tool_kwargs} returned {tool_msg.content}"
+            # )
+            AgentRunEvent(
+                name=tool_call.tool_name,
+                msg=f"Отправляем запрос",
+            )
+        )
 
         try:
             if isinstance(tool, FunctionToolWithContext):
@@ -346,8 +352,12 @@ class ConciergeAgent(Workflow):
             )
 
         ctx.write_event_to_stream(
-            ProgressEvent(
-                msg=f"Tool {tool_call.tool_name} called with {tool_call.tool_kwargs} returned {tool_msg.content}"
+            # ProgressEvent(
+            #     msg=f"Tool {tool_call.tool_name} called with {tool_call.tool_kwargs} returned {tool_msg.content}"
+            # )
+            AgentRunEvent(
+                name=tool_call.tool_name,
+                msg=f"Обрабатываем результаты",
             )
         )
 
@@ -413,8 +423,17 @@ class ConciergeAgent(Workflow):
         selected_agent = tool_call.tool_kwargs["agent_name"]
         await ctx.set("active_speaker", selected_agent)
 
+        # ctx.write_event_to_stream(
+        #     ProgressEvent(msg=f"Transferring to agent {selected_agent}")
+        # )
         ctx.write_event_to_stream(
-            ProgressEvent(msg=f"Transferring to agent {selected_agent}")
+            # ProgressEvent(
+            #     msg=f"Tool {tool_call.tool_name} called with {tool_call.tool_kwargs} returned {tool_msg.content}"
+            # )
+            AgentRunEvent(
+                name=tool_call.tool_name,
+                msg=f"Запускаем агента",
+            )
         )
 
         return ActiveSpeakerEvent()

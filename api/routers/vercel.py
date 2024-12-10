@@ -7,7 +7,7 @@ import uuid
 from typing import Awaitable
 import asyncio
 from aiostream import stream
-from app.stub_workflow import AgentRunEvent, ProgressEvent
+from app.workflow_events import AgentRunEvent, ProgressEvent
 from llama_index.core.llms import ChatMessage
 # Set up logging
 logging.basicConfig(
