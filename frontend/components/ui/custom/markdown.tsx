@@ -1,6 +1,7 @@
 import { SourceData } from "@llamaindex/chat-ui";
 import { Markdown as MarkdownUI } from "@llamaindex/chat-ui/widgets";
 import { useClientConfig } from "../hooks/use-config";
+import { cn } from "@/lib/utils";
 
 const preprocessMedia = (content: string) => {
   // Remove `sandbox:` from the beginning of the URL before rendering markdown
@@ -11,17 +12,24 @@ const preprocessMedia = (content: string) => {
 export function Markdown({
   content,
   sources,
+  className,
 }: {
   content: string;
   sources?: SourceData;
+  className?: string;
 }) {
   const { backend } = useClientConfig();
   const processedContent = preprocessMedia(content);
   return (
-    <MarkdownUI
-      content={processedContent}
-      backend={backend}
-      sources={sources}
-    />
+    <div className={cn("prose dark:prose-invert max-w-none", 
+      "[&_a]:text-[#f8460f] [&_a]:font-normal [&_a:hover]:opacity-80 [&_a]:transition-opacity [&_a]:no-underline",
+      className
+    )}>
+      <MarkdownUI
+        content={processedContent}
+        backend={backend}
+        sources={sources}
+      />
+    </div>
   );
 }
