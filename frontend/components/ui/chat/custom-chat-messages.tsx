@@ -56,7 +56,7 @@ export function CustomChatMessages() {
                           isFinished={!isLoading || !isLast}
                         />
                       </div>
-                      <div className="bg-transparent rounded-2xl p-6">
+                      <div className="bg-transparent rounded-2xl p-4">
                         <CustomMessageContent />
                       </div>
                     </div>
