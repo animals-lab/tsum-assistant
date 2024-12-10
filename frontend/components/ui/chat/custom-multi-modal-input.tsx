@@ -20,14 +20,14 @@ import { Textarea } from "@/components/ui/textarea";
 
 const suggestedActions = [
   {
-    title: "What is the weather",
-    label: "in San Francisco?",
-    action: "What is the weather in San Francisco?",
+    title: "Привет, помоги найти",
+    label: "белые кеды!",
+    action: "Привет, помоги найти белые кеды!",
   },
   {
-    title: "How is python useful",
-    label: "for AI engineers?",
-    action: "How is python useful for AI engineers?",
+    title: "Вечернее платье,",
+    label: "чёрное, шикарное!",
+    action: "Вечернее платье, чёрное, шикарное!",
   },
 ];
 
