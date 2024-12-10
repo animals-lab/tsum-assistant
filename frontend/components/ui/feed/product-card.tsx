@@ -27,7 +27,17 @@ export function ProductCard({ product }: ProductCardProps) {
       
       {/* Hover overlay with all information */}
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        {/* Discount badge - now part of the hover overlay */}
+        {/* TSUM logo badge */}
+        <div className="absolute top-4 left-4 w-12 h-8 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <Image
+            src="https://www.tsum.ru/static/media/logo.047b4fb0.svg"
+            alt="TSUM"
+            fill
+            className="object-contain"
+          />
+        </div>
+
+        {/* Discount badge */}
         {discount > 0 && (
           <Badge 
             className="absolute top-2 right-2 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
