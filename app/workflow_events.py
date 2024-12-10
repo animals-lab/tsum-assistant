@@ -20,10 +20,13 @@ class AgentRunEvent(Event):
     data: Optional[dict] = None
 
     def to_response(self) -> dict:
+        # TODO UGLY!
+        agent_human_names = {"TransferToAgent": "Координатор", "query_catalog_short": "Поиск в каталоге", "fetch_fashion_trends": "Эксперт по стилю"}
+
         return {
             "type": "agent",
             "data": {
-                "agent": self.name,
+                "agent": agent_human_names.get(self.name, self.name),
                 "type": self.event_type.value,
                 "text": self.msg,
                 "data": self.data,
