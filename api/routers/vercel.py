@@ -8,7 +8,7 @@ from typing import Awaitable
 import asyncio
 from aiostream import stream
 from app.stub_workflow import AgentRunEvent, ProgressEvent
-
+from llama_index.core.llms import ChatMessage
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -78,7 +78,10 @@ class VercelStreamResponse(StreamingResponse):
                     final_response += str(token.delta)
                     yield self.convert_text(token.delta)
             else:
-                if hasattr(result, "response"):
+                if content:= result.get('response'):
+                    final_response += content
+                    yield self.convert_text(content)
+                elif hasattr(result, "response"):
                     content = result.response.message.content
                     if content:
                         for token in content:

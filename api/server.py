@@ -23,7 +23,8 @@ from app.catalog.query import query_catalog, product_queue
 from app.agent import get_initial_state, get_agent_configs
 from llama_index.llms.openai import OpenAI
 from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.llms import ChatMessage
+
+# from llama_index.core.llms import ChatMessage
 import llama_index.core
 from app.catalog.query import query_catalog, product_queue
 from app.catalog.models import GenderType, Offer
