@@ -78,9 +78,9 @@ def get_trend_tools() -> list[BaseTool]:
                 
             logger.info(f"Using latest user message: {latest_user_msg}")
             
-            ctx.write_event_to_stream(
-                ProgressEvent(msg=f"Querying Perplexity with: {latest_user_msg}")
-            )
+            # ctx.write_event_to_stream(
+            #     ProgressEvent(msg=f"Querying Perplexity with: {latest_user_msg}")
+            # )
             
             messages_dict = [
                 {
