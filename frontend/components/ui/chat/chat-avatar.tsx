@@ -1,6 +1,6 @@
 import { useChatMessage } from "@llamaindex/chat-ui";
 import { User2 } from "lucide-react";
-import { SparklesIcon } from "@/app/components/ui/icons";
+import { SparklesIcon } from "@/components/ui/icons";
 
 export function ChatMessageAvatar() {
   const { message } = useChatMessage();

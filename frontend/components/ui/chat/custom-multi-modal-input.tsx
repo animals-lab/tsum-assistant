@@ -12,11 +12,11 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
-import { cn, sanitizeUIMessages } from "@/app/components/ui/lib/utils";
+import { cn, sanitizeUIMessages } from "@/lib/utils";
 
-import { ArrowUpIcon, StopIcon } from "@/app/components/ui/icons";
-import { Button } from "@/app/components/ui/button";
-import { Textarea } from "@/app/components/ui/textarea";
+import { ArrowUpIcon, StopIcon } from "@/components/ui/icons";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 const suggestedActions = [
   {

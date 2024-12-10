@@ -1,5 +1,5 @@
-import ChatSection from "@/app/components/chat-section";
-import ChatExample from "@/app/components/chat-llama";
+import ChatSection from "@/components/chat-section";
+import ChatExample from "@/components/chat-llama";
 
 export default function Page() {
   return <ChatExample />;

@@ -4,9 +4,9 @@ import { ChatSection as ChatSectionUI } from "@llamaindex/chat-ui";
 import "@llamaindex/chat-ui/styles/markdown.css";
 import "@llamaindex/chat-ui/styles/pdf.css";
 import { useChat } from "ai/react";
-import CustomChatMessages from "@/app/components/ui/chat/chat-messages";
-import { useClientConfig } from "@/app/components/ui/hooks/use-config";
-import { MultimodalInput } from "@/app/components/ui/chat/custom-multi-modal-input";
+import CustomChatMessages from "@/components/ui/chat/chat-messages";
+import { useClientConfig } from "@/components/ui/hooks/use-config";
+import { MultimodalInput } from "@/components/ui/chat/custom-multi-modal-input";
 
 export default function ChatSection() {
   const { backend } = useClientConfig();

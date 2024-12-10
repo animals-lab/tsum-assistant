@@ -3,7 +3,7 @@
 import { ChatSection } from '@llamaindex/chat-ui';
 import { useChat } from 'ai/react';
 import { CustomChatMessages } from './ui/chat/custom-chat-messages';
-import { MultimodalInput } from "@/app/components/ui/chat/custom-multi-modal-input";
+import { MultimodalInput } from "@/components/ui/chat/custom-multi-modal-input";
 
 export default function ChatExample() {
   const handler = useChat()

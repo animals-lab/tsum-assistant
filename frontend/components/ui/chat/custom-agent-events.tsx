@@ -2,7 +2,7 @@ import { AgentEventData } from '@llamaindex/chat-ui';
 import { ChevronDown, Check } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TextShimmer } from '@/app/components/ui/core/text-shimmer';
+import { TextShimmer } from '@/components/ui/core/text-shimmer';
 
 interface ChatAgentEventsProps {
   data: AgentEventData[];
