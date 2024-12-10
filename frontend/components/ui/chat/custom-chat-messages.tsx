@@ -7,7 +7,7 @@ export function CustomChatMessages() {
   const { messages, isLoading } = useChatUI();
   
   return (
-    <ChatMessages className="flex-1 flex flex-col overflow-hidden">
+    <ChatMessages className="flex-1 flex flex-col overflow-hidden bg-transparent">
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;

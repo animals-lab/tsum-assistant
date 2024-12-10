@@ -8,7 +8,7 @@ import { MultimodalInput } from "@/components/ui/chat/custom-multi-modal-input";
 export default function Chat() {
   const handler = useChat()
   return (
-    <ChatSection handler={handler} className="fixed left-4 top-4 bottom-4 flex flex-col w-[640px] bg-background rounded-lg shadow-lg border p-6 z-50">
+    <ChatSection handler={handler} className="fixed left-4 top-4 bottom-4 flex flex-col w-[600px] bg-white/70 backdrop-blur-md rounded-lg shadow-lg border p-3 z-50">
       <CustomChatMessages />
       <MultimodalInput
         className='' 
