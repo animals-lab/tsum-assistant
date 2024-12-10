@@ -2,13 +2,13 @@
 
 import { ChatSection } from '@llamaindex/chat-ui';
 import { useChat } from 'ai/react';
-import { CustomChatMessages } from './ui/chat/custom-chat-messages';
+import { CustomChatMessages } from '@/components/ui/chat/custom-chat-messages';
 import { MultimodalInput } from "@/components/ui/chat/custom-multi-modal-input";
 
-export default function ChatExample() {
+export default function Chat() {
   const handler = useChat()
   return (
-    <ChatSection handler={handler} className="flex flex-col min-w-0 w-[90dvw] max-w-3xl h-[80dvh] mx-auto my-[10dvh] bg-background rounded-lg shadow-lg border p-10">
+    <ChatSection handler={handler} className="fixed left-4 top-4 bottom-4 flex flex-col w-[640px] bg-background rounded-lg shadow-lg border p-6 z-50">
       <CustomChatMessages />
       <MultimodalInput
         className='' 
