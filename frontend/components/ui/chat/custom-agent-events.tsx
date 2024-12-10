@@ -103,7 +103,7 @@ export function CustomChatAgentEvents({ data, isFinished }: ChatAgentEventsProps
   };
 
   return (
-    <div className="rounded-lg border border-gray-100 relative">
+    <div className="rounded-lg border border-gray-100 relative bg-white/70">
       {/* Main vertical timeline line - now outside of sections */}
       <div className="absolute left-[1.45rem] top-4 bottom-4 w-px bg-gray-100" />
       
@@ -115,7 +115,7 @@ export function CustomChatAgentEvents({ data, isFinished }: ChatAgentEventsProps
           <div key={`${group.agent}-${groupIndex}`} className="relative">
             {/* Section header */}
             <div 
-              className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 rounded-lg"
               onClick={() => toggleSection(group.agent)}
             >
               <div className="flex items-center gap-2">
