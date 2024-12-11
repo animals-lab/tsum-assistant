@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from typing import AsyncGenerator
-from .vercel import VercelStreamResponse
+from api.lib.vercel import VercelStreamResponse
 import asyncio
 import json
 
