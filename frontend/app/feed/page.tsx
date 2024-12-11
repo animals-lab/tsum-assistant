@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ui/feed/product-card"
 import { useEffect, useRef, useState } from "react"
 import Chat from "@/components/chat-llama"
 import type { Product } from "@/types/feed"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function Home() {
   const {
@@ -16,32 +17,13 @@ export default function Home() {
   } = useFeed()
 
   const [streamedProducts, setStreamedProducts] = useState<Product[]>([])
+  const [chatProducts, setChatProducts] = useState<Product[]>([])
 
-  const allProducts = [...streamedProducts, ...products]
+  // Combine all products, with chat and streamed products first
+  const allProducts = [...chatProducts, ...streamedProducts, ...products]
 
   const [isIntersecting, setIsIntersecting] = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
-
-  // useEffect(() => {
-  //   const eventSource = new EventSource('http://localhost:8000/api/product-stream')
-
-  //   eventSource.addEventListener('product', (event) => {
-  //     try {
-  //       const product = JSON.parse(event.data) as Product
-  //       setStreamedProducts(prev => [{...product, isStreamed: true}, ...prev])
-  //     } catch (error) {
-  //       console.error('Error parsing product data:', error)
-  //     }
-  //   })
-
-  //   eventSource.addEventListener('error', (event: Event) => {
-  //     console.error('Stream error:', event)
-  //   })
-
-  //   return () => {
-  //     eventSource.close()
-  //   }
-  // }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -71,17 +53,45 @@ export default function Home() {
     }
   }, [hasMore, isFeedLoading, loadMore])
 
+  const handleNewChatProducts = (newProducts: Product[]) => {
+    console.log('Received new products:', newProducts);
+    // Filter out duplicates based on id
+    const filteredProducts = newProducts.filter(offer => 
+      !chatProducts.some(p => p.id === offer.id) && 
+      !streamedProducts.some(p => p.id === offer.id) && 
+      !products.some(p => p.id === offer.id)
+    )
+    console.log('After filtering duplicates:', filteredProducts);
+    if (filteredProducts.length > 0) {
+      console.log('Adding new products to state');
+      setChatProducts(prev => {
+        const newState = [...filteredProducts.map(p => ({ ...p, isFromChat: true })), ...prev];
+        console.log('New chat products state:', newState);
+        return newState;
+      });
+    }
+  }
+
   return (
     <>
       <main className="min-h-screen p-4 pl-[420px] md:p-6 md:pl-[420px] lg:p-8 lg:pl-[420px]">
         <div className="max-w-[1800px] mx-auto">
           <div className="mb-4 flex justify-between items-center">
             <div className="text-sm text-gray-600">
-              Showing {allProducts.length} of {totalItems + streamedProducts.length} items
+              Showing {allProducts.length} of {totalItems + streamedProducts.length + chatProducts.length} items
             </div>
-            {streamedProducts.length > 0 && (
-              <div className="text-sm text-green-600">
-                {streamedProducts.length} new items received
+            {(streamedProducts.length > 0 || chatProducts.length > 0) && (
+              <div className="text-sm">
+                {streamedProducts.length > 0 && (
+                  <span className="text-green-600 mr-4">
+                    {streamedProducts.length} new items received
+                  </span>
+                )}
+                {chatProducts.length > 0 && (
+                  <span className="text-blue-600">
+                    {chatProducts.length} items from chat
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -93,11 +103,20 @@ export default function Home() {
               justifyContent: 'center'
             }}
           >
-            {allProducts?.map((product: Product) => (
-              <div key={`${product.id}-${(product as any).isStreamed ? 'streamed' : 'fetched'}`}>
-                <ProductCard product={product} />
-              </div>
-            ))}
+            <AnimatePresence mode="popLayout">
+              {allProducts?.map((product: Product) => (
+                <motion.div 
+                  key={`${product.id}-${(product as any).isFromChat ? 'chat' : (product as any).isStreamed ? 'streamed' : 'fetched'}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                  layout
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
           {hasMore && (
             <div 
@@ -116,7 +135,7 @@ export default function Home() {
           )}
         </div>
       </main>
-      <Chat />
+      <Chat onNewProducts={handleNewChatProducts} />
     </>
   )
 }
