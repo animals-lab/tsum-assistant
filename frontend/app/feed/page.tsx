@@ -2,10 +2,15 @@
 
 import { useFeed } from "@/components/ui/hooks/use-feed"
 import { ProductCard } from "@/components/ui/feed/product-card"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import Chat from "@/components/chat-llama"
 import type { Product } from "@/types/feed"
 import { motion, AnimatePresence } from "framer-motion"
+
+interface ProductWithSource extends Product {
+  isFromChat?: boolean;
+  isStreamed?: boolean;
+}
 
 export default function Home() {
   const {
@@ -16,14 +21,32 @@ export default function Home() {
     totalItems
   } = useFeed()
 
-  const [streamedProducts, setStreamedProducts] = useState<Product[]>([])
-  const [chatProducts, setChatProducts] = useState<Product[]>([])
+  const [streamedProducts, setStreamedProducts] = useState<ProductWithSource[]>([])
+  const [chatProducts, setChatProducts] = useState<ProductWithSource[]>([])
 
   // Combine all products, with chat and streamed products first
   const allProducts = [...chatProducts, ...streamedProducts, ...products]
 
   const [isIntersecting, setIsIntersecting] = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
+
+  const handleNewChatProducts = useCallback((newProducts: Product[]) => {
+    setChatProducts(prev => {
+      const newState = [...prev];
+      
+      newProducts.forEach(product => {
+        // Remove if exists in current list
+        const existingIndex = newState.findIndex(p => p.id === product.id);
+        if (existingIndex !== -1) {
+          newState.splice(existingIndex, 1);
+        }
+        // Add to top
+        newState.unshift({ ...product, isFromChat: true });
+      });
+      
+      return newState;
+    });
+  }, []); // No dependencies needed as we're using functional updates
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -52,25 +75,6 @@ export default function Home() {
       }
     }
   }, [hasMore, isFeedLoading, loadMore])
-
-  const handleNewChatProducts = (newProducts: Product[]) => {
-    console.log('Received new products:', newProducts);
-    // Filter out duplicates based on id
-    const filteredProducts = newProducts.filter(offer => 
-      !chatProducts.some(p => p.id === offer.id) && 
-      !streamedProducts.some(p => p.id === offer.id) && 
-      !products.some(p => p.id === offer.id)
-    )
-    console.log('After filtering duplicates:', filteredProducts);
-    if (filteredProducts.length > 0) {
-      console.log('Adding new products to state');
-      setChatProducts(prev => {
-        const newState = [...filteredProducts.map(p => ({ ...p, isFromChat: true })), ...prev];
-        console.log('New chat products state:', newState);
-        return newState;
-      });
-    }
-  }
 
   return (
     <>
@@ -104,9 +108,9 @@ export default function Home() {
             }}
           >
             <AnimatePresence mode="popLayout">
-              {allProducts?.map((product: Product) => (
+              {allProducts?.map((product: ProductWithSource) => (
                 <motion.div 
-                  key={`${product.id}-${(product as any).isFromChat ? 'chat' : (product as any).isStreamed ? 'streamed' : 'fetched'}`}
+                  key={`${product.id}-${product.isFromChat ? 'chat' : product.isStreamed ? 'streamed' : 'fetched'}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}

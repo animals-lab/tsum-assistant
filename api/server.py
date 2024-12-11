@@ -19,10 +19,10 @@ llama_index.core.set_global_handler(
 )
 
 # Set specific levels for different loggers
-logging.getLogger("uvicorn").setLevel(logging.CRITICAL)
-logging.getLogger("fastapi").setLevel(logging.CRITICAL)
-logging.getLogger("vercel").setLevel(logging.CRITICAL)
-logging.getLogger("api_server").setLevel(logging.CRITICAL)
+logging.getLogger("uvicorn").setLevel(logging.INFO)
+logging.getLogger("fastapi").setLevel(logging.INFO)
+logging.getLogger("vercel").setLevel(logging.INFO)
+logging.getLogger("api_server").setLevel(logging.INFO)
 logging.getLogger("workflow").setLevel(logging.INFO)  # Keep workflow logs visible
 
 logger = logging.getLogger(__name__)
