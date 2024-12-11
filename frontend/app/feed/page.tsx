@@ -22,26 +22,26 @@ export default function Home() {
   const [isIntersecting, setIsIntersecting] = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8000/api/product-stream')
+  // useEffect(() => {
+  //   const eventSource = new EventSource('http://localhost:8000/api/product-stream')
 
-    eventSource.addEventListener('product', (event) => {
-      try {
-        const product = JSON.parse(event.data) as Product
-        setStreamedProducts(prev => [{...product, isStreamed: true}, ...prev])
-      } catch (error) {
-        console.error('Error parsing product data:', error)
-      }
-    })
+  //   eventSource.addEventListener('product', (event) => {
+  //     try {
+  //       const product = JSON.parse(event.data) as Product
+  //       setStreamedProducts(prev => [{...product, isStreamed: true}, ...prev])
+  //     } catch (error) {
+  //       console.error('Error parsing product data:', error)
+  //     }
+  //   })
 
-    eventSource.addEventListener('error', (event: Event) => {
-      console.error('Stream error:', event)
-    })
+  //   eventSource.addEventListener('error', (event: Event) => {
+  //     console.error('Stream error:', event)
+  //   })
 
-    return () => {
-      eventSource.close()
-    }
-  }, [])
+  //   return () => {
+  //     eventSource.close()
+  //   }
+  // }, [])
 
   useEffect(() => {
     const observer = new IntersectionObserver(

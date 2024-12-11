@@ -23,7 +23,8 @@ class VercelStreamResponse(StreamingResponse):
     """
 
     TEXT_PREFIX = "0:"
-    DATA_PREFIX = "8:"
+    DATA_PREFIX = "2:"
+    ANNOTATION_PREFIX = "8:"
     ERROR_PREFIX = "3:"
 
     def __init__(self, request: Request, *args, **kwargs):
@@ -102,14 +103,16 @@ class VercelStreamResponse(StreamingResponse):
         # Yield the events from the event handler
         async def _event_generator():
             async for event in events:
-                if isinstance(event, AgentRunEvent):
-                    event_response = event.to_response()
-                    if verbose:
-                        logger.debug(event_response)
-                    if event_response is not None:
-                        yield self.convert_data(event_response)
+                response = None
+                if hasattr(event, "to_annotation"):
+                    response = self.convert_object(event.to_annotation(), prefix=self.ANNOTATION_PREFIX)
+                elif hasattr(event, "to_data"):
+                    response = self.convert_object(event.to_data(), prefix=self.DATA_PREFIX)
                 elif isinstance(event, ProgressEvent):
-                    yield self.convert_text(event.msg + " ")
+                    response = self.convert_text(event.msg + " ")
+
+                if response is not None:
+                    yield response
 
         combine = stream.merge(_chat_response_generator(), _event_generator())
         return combine
@@ -121,9 +124,12 @@ class VercelStreamResponse(StreamingResponse):
         return f"{cls.TEXT_PREFIX}{token}\n"
 
     @classmethod
-    def convert_data(cls, data: dict):
+    def convert_object(cls, data: dict, prefix: str=None):
+        if prefix is None: 
+            prefix = cls.ANNOTATION_PREFIX
+
         data_str = json.dumps(data)
-        return f"{cls.DATA_PREFIX}[{data_str}]\n"
+        return f"{prefix}[{data_str}]\n"
 
     @classmethod
     def convert_error(cls, error: str):

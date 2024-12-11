@@ -1,7 +1,8 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from llama_index.core.workflow import Event
+from app.catalog.models import Offer
 
 
 class AgentRunEventType(Enum):
@@ -19,9 +20,13 @@ class AgentRunEvent(Event):
     event_type: AgentRunEventType = AgentRunEventType.TEXT
     data: Optional[dict] = None
 
-    def to_response(self) -> dict:
+    def to_annotation(self) -> dict:
         # TODO UGLY!
-        agent_human_names = {"TransferToAgent": "Координатор", "query_catalog_short": "Поиск в каталоге", "fetch_fashion_trends": "Эксперт по стилю"}
+        agent_human_names = {
+            "TransferToAgent": "Координатор",
+            "query_catalog_short": "Поиск в каталоге",
+            "fetch_fashion_trends": "Эксперт по стилю",
+        }
 
         return {
             "type": "agent",
@@ -31,4 +36,13 @@ class AgentRunEvent(Event):
                 "text": self.msg,
                 "data": self.data,
             },
+        }
+
+
+class OfferStreamEvent(Event):
+    offers: List[Offer]
+
+    def to_data(self) -> dict:
+        return {
+            "offers": [offer.model_dump() for offer in self.offers],
         }

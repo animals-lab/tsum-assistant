@@ -4,9 +4,15 @@ import { ChatSection } from '@llamaindex/chat-ui';
 import { useChat } from 'ai/react';
 import { CustomChatMessages } from '@/components/ui/chat/custom-chat-messages';
 import { MultimodalInput } from "@/components/ui/chat/custom-multi-modal-input";
+import { useEffect } from 'react';
 
 export default function Chat() {
-  const handler = useChat()
+  const handler = useChat();
+
+  useEffect(() => {
+    console.log('Handler Data:', handler.data);
+  }, [handler.data]);
+
   return (
     <ChatSection handler={handler} className="fixed left-4 top-4 bottom-4 flex flex-col w-[600px] bg-white/70 backdrop-blur-md rounded-lg shadow-lg border p-3 z-50">
       <CustomChatMessages />

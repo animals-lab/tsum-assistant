@@ -10,7 +10,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.perplexity import Perplexity
 from llama_index.core.llms import ChatMessage
 
-from .catalog.query import query_catalog_short
+from .catalog.query import query_catalog, ShortOffer
 from .utils import FunctionToolWithContext
 from .workflow import (
     AgentConfig,
@@ -18,7 +18,9 @@ from .workflow import (
     ProgressEvent,
     ToolApprovedEvent,
     ToolRequestEvent,
+    
 )
+from .workflow_events import OfferStreamEvent
 
 load_dotenv()
 
@@ -132,11 +134,26 @@ Citations:
     ]
 
 
+def get_catalog_search_tools() -> list[BaseTool]:
+    async def query_catalog_tool(ctx: Context, **kwargs) -> str:
+        logger.info(f"Querying catalog with: {kwargs}")
+        offers, _ = await query_catalog(**kwargs)
+
+        logger.info(f"Writing {len(offers)} offers to stream")
+        ctx.write_event_to_stream(OfferStreamEvent(offers=offers))
+
+        logger.info(f"Sending {len(offers[:5])} offers as result")
+        return [
+            ShortOffer.from_offer(offer).model_dump() for offer in offers[:5]
+        ]
+    
+    return [FunctionToolWithContext.from_defaults(async_fn=query_catalog_tool)]
 
 
 # Agent Configurations
 def get_agent_configs() -> list[AgentConfig]:
     return [
+        # TODO, fix prompt ambiguity
         # CATALOG SEARCH AGENT
         AgentConfig(
             name="Catalog Search Agent",
@@ -154,7 +171,7 @@ def get_agent_configs() -> list[AgentConfig]:
             system_prompt="""
             You are a catalog search assistant. You can search for products using these parameters:
             - query_text (string): Use for free-form text search (e.g., "кеды", "элегантное платье")
-            - color (list[str]): List of colors (e.g., ["Белый", "Черный"])
+            - color (list[str]): List of colors (e.g., ["Белый", "Чёрный"])
             - gender (str): Gender ("Мужской", "Женский", or "Унисекс")
             - vendor (list[str], optional): List of brand names
             - min_price (float, optional): Minimum price
@@ -171,12 +188,12 @@ def get_agent_configs() -> list[AgentConfig]:
             ```python
             {
                 "query_text": "кеды",
-                "color": ["Белый"],
+                "color": ["Чёрный"],
                 "gender": "Мужской"
             }
             ```
             """,
-            tools=[FunctionTool.from_defaults(async_fn=query_catalog_short)],
+            tools=get_catalog_search_tools(),
         ),
 
         # STYLIST AGENT
