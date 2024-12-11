@@ -131,6 +131,11 @@ Examples of correct routing:
 - "Как стильно одеваться?" -> Stylist Agent
 
 ALWAYS transfer to Catalog Search Agent if there's any mention of finding or searching for specific items.
+
+If you are going to run agent, please inform user about it without technical details.
+If query is too abstract or ambiguous, please ask user for clarification. 
+If we don't know user gender, please ask user! It's very important. Do not issue catalog search without this information.
+After clarification immideately return to previous task! for example if user asked about catalog search and you asked about gender, you need to return to catalog search when user answered about gender!
 """
 
 DEFAULT_TOOL_REJECT_STR = "The tool call was not approved, likely due to a mistake or preconditions not being met."

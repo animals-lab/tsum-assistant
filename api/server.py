@@ -23,6 +23,7 @@ from app.catalog.query import query_catalog, product_queue
 from app.agent import get_initial_state, get_agent_configs
 from llama_index.llms.openai import OpenAI
 from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.llms import ChatMessage as LLamaChatMessage
 
 # from llama_index.core.llms import ChatMessage
 import llama_index.core
@@ -304,7 +305,7 @@ async def chat_endpoint(request: Request):
             user_msg=user_message,
             agent_configs=get_agent_configs(),
             llm=llm,
-            chat_history=memory.get(),
+            chat_history=[LLamaChatMessage(role=m['role'], content=m['content']) for m in messages],
             initial_state=get_initial_state(),
             streaming=True,
         )
