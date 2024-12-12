@@ -7,16 +7,11 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.catalog.models import GenderType, Offer
+from app.catalog.models import GenderType, Offer, StructuredQuery, CatalogQueryResponse
 from app.catalog.query import product_queue, query_catalog
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-
-
-class CatalogQueryResponse(BaseModel):
-    items: List[Offer]
-    scores: List[float]
 
 
 @router.get("/catalog", response_model=CatalogQueryResponse)
@@ -49,8 +44,10 @@ async def get_catalog(
     """
     try:
         logger.info(f"Querying catalog with parameters: {locals()}")
-        items, scores = await query_catalog(
-            query_text=query_text,
+        
+        # Create StructuredQuery instance from parameters
+        query = StructuredQuery(
+            query_text=query_text or None,  # Convert empty string to None
             vendor=vendor,
             category=category,
             color=color,
@@ -61,47 +58,12 @@ async def get_catalog(
             limit=limit,
             offset=offset,
         )
+        
+        items, scores = await query_catalog(
+            query
+        )
         return CatalogQueryResponse(items=items, scores=scores)
     except Exception as e:
         logger.error(f"Error in catalog query: {str(e)}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/product-stream")
-async def stream_products(request: Request):
-    """
-    Streams products from the product queue as Server-Sent Events.
-    Each event contains a JSON-serialized Offer object.
-    """
-
-    async def event_generator():
-        try:
-            while True:
-                if await request.is_disconnected():
-                    logger.info("Client disconnected from product stream")
-                    break
-
-                # Wait for the next item from the queue
-                offer: Offer = await product_queue.get()
-
-                # Convert the Offer to JSON and format as SSE
-                json_data = offer.model_dump_json()
-                yield f"event: product\ndata: {json_data}\n\n"
-
-                # Mark the task as done
-                product_queue.task_done()
-
-        except Exception as e:
-            logger.error(f"Error in product stream: {str(e)}")
-            logger.error(traceback.format_exc())
-            yield f"event: error\ndata: {json.dumps(str(e))}\n\n"
-
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-        },
-    ) 

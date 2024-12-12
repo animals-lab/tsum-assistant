@@ -10,7 +10,7 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.perplexity import Perplexity
 from llama_index.core.llms import ChatMessage
 
-from .catalog.query import query_catalog, ShortOffer
+
 from .utils import FunctionToolWithContext
 from .workflow import (
     AgentConfig,
@@ -21,6 +21,7 @@ from .workflow import (
     
 )
 from .workflow_events import OfferStreamEvent
+from .catalog.search_workflow import SearchWorkflow
 
 load_dotenv()
 
@@ -135,17 +136,30 @@ Citations:
 
 
 def get_catalog_search_tools() -> list[BaseTool]:
-    async def query_catalog_tool(ctx: Context, **kwargs) -> str:
-        logger.info(f"Querying catalog with: {kwargs}")
-        offers, _ = await query_catalog(**kwargs)
+    async def query_catalog_tool(ctx: Context, query: str) -> str:
+        """Use this tool to search the catalog for products.
+        Args:
+            query: A string containing the search query. This can be a natural language query like
+                  "белые кеды для мужчин" or "элегантное черное платье".  If you know something about user preferences or profile
+                  you can include it in the query.
+        
+        Returns:
+            A text response with search status, results will be streamed separately
+        """
+        # logger.info(f"Querying catalog with: {kwargs}")
+        # offers, _ = await query_catalog(**kwargs)
 
-        logger.info(f"Writing {len(offers)} offers to stream")
-        ctx.write_event_to_stream(OfferStreamEvent(offers=offers))
+        # logger.info(f"Writing {len(offers)} offers to stream")
+        # ctx.write_event_to_stream(OfferStreamEvent(offers=offers))
 
-        logger.info(f"Sending {len(offers[:5])} offers as result")
-        return [
-            ShortOffer.from_offer(offer).model_dump() for offer in offers[:5]
-        ]
+        # logger.info(f"Sending {len(offers[:5])} offers as result")
+        # return [
+        #     ShortOffer.from_offer(offer).model_dump() for offer in offers[:5]
+        # ]
+        workflow = SearchWorkflow(timeout=20, ctx=ctx)
+        result = await workflow.run(input_query=query)
+        
+        return result.get("validated_offers", [])
     
     return [FunctionToolWithContext.from_defaults(async_fn=query_catalog_tool)]
 
@@ -170,26 +184,15 @@ def get_agent_configs() -> list[AgentConfig]:
             """,
             system_prompt="""
             You are a catalog search assistant. You can search for products using these parameters:
-            - query_text (string): Use for free-form text search (e.g., "кеды", "элегантное платье")
-            - color (list[str]): List of colors (e.g., ["Белый", "Чёрный"])
-            - gender (str): Gender ("Мужской", "Женский", or "Унисекс")
-            - vendor (list[str], optional): List of brand names
-            - min_price (float, optional): Minimum price
-            - max_price (float, optional): Maximum price
-            - material (list[str], optional): List of materials
-
-            IMPORTANT RULES:
-            1. ALWAYS use query_text for the main search term
-            2. NEVER use the 'category' parameter - include category terms in query_text instead
-            3. For colors, use exact matches like "Белый" (not "белый")
-            4. For gender, use exact match "Мужской" (not "мужской")
+            -  query: A string containing the search query. This can be a natural language query like
+                  "белые кеды для мужчин" or "элегантное черное платье".  If you know something about user preferences or profile
+                  you can include it in the query.
 
             Example correct usage:
             ```python
             {
-                "query_text": "кеды",
-                "color": ["Чёрный"],
-                "gender": "Мужской"
+                "query": "чёрные оксфорды, для мужчин",
+    
             }
             ```
             """,

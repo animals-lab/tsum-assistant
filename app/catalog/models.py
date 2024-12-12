@@ -217,3 +217,8 @@ class StructuredQuery(BaseModel):
     offset: int = Field(
         0, description="Number of results to skip for pagination (default is 0)."
     )
+
+
+class CatalogQueryResponse(BaseModel):
+    items: List[Offer]
+    scores: List[float]
