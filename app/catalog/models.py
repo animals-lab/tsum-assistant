@@ -154,7 +154,11 @@ class Offer(BaseModel):
 
         # Combine categories from hierarchy and custom categories parameter
         categories_from_tree = [cat["name"] for cat in cat_tree]
-        categories_from_param = basic_data.get("category", "").split(",") if basic_data.get("category") else []
+        categories_from_param = (
+            basic_data.get("category", "").split(",")
+            if basic_data.get("category")
+            else []
+        )
         basic_data["categories"] = set(categories_from_tree + categories_from_param)
 
         basic_data["params"] = params
@@ -184,3 +188,32 @@ class ShortOffer(BaseModel):
             url=offer.url,
             image_url=offer.picture,
         )
+
+
+class StructuredQuery(BaseModel):
+    query_text: Optional[str] = Field(
+        None,
+        description='Free-form text query (e.g., "элегантное платье", "черные туфли", "модный свитер").',
+    )
+    vendor: Optional[List[str]] = Field(
+        None, description='List of brand names (e.g., "Gucci", "Dsquared2").'
+    )
+    category: Optional[List[str]] = Field(
+        None,
+        description='List of product categories in Russian, plural (e.g., "Платья", "Вечерние платья", "Блузки").',
+    )
+    color: Optional[List[str]] = Field(
+        None, description='List of colors (e.g., "Чёрный", "Белый", "Красный").'
+    )
+    gender: Optional[GenderType] = Field(
+        None, description='Gender category ("Мужской", "Женский").'
+    )
+    min_price: Optional[float] = Field(None, description="Minimum price filter.")
+    max_price: Optional[float] = Field(None, description="Maximum price filter.")
+    material: Optional[List[str]] = Field(
+        None, description='List of materials (e.g., "Хлопок", "Шерсть", "Кашемир").'
+    )
+    limit: int = Field(20, description="Number of results to return (default is 10).")
+    offset: int = Field(
+        0, description="Number of results to skip for pagination (default is 0)."
+    )
