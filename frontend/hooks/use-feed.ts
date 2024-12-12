@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Product, FeedResponse, FilterState } from '@/types/feed'
+import { Product } from '@/types/feed'
 
 const CARD_WIDTH = 272
 const CARD_GAP = 16
@@ -9,11 +9,9 @@ const PAGE_SIZE = 20
 export function useFeed() {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [filters, setFilters] = useState<FilterState>({})
   const [totalItems, setTotalItems] = useState(0)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
-  const loadingRef = useRef(false)
   const isInitialLoad = useRef(true)
 
   // Calculate how many items we need to fill the viewport
@@ -30,21 +28,8 @@ export function useFeed() {
   }
 
   const loadProducts = async (limit: number = PAGE_SIZE, currentOffset: number = 0, isInitial: boolean = false) => {
-    if (loadingRef.current) {
-      console.log('Loading in progress, skipping request')
-      return
-    }
+    if (isLoading) return;
     
-    console.log('Loading products:', { 
-      limit, 
-      currentOffset, 
-      isInitial, 
-      hasMore,
-      currentProductsCount: products.length,
-      stateOffset: offset
-    })
-
-    loadingRef.current = true
     setIsLoading(true)
 
     try {
@@ -55,8 +40,6 @@ export function useFeed() {
       })
 
       const url = `${API_URL}/api/catalog?${params}`
-      console.log('Fetching URL:', url)
-
       const response = await fetch(url)
 
       if (!response.ok) {
@@ -64,14 +47,6 @@ export function useFeed() {
       }
 
       const data = await response.json()
-      console.log('API Response:', {
-        itemsReceived: data.items.length,
-        total: data.total,
-        requestedOffset: currentOffset,
-        requestedLimit: limit,
-        firstItemId: data.items[0]?.id,
-        lastItemId: data.items[data.items.length - 1]?.id
-      })
       
       // Transform the data to match our frontend interface
       const transformedItems = data.items.map((item: any) => ({
@@ -95,21 +70,12 @@ export function useFeed() {
         categoryId: item.category_id?.toString()
       }))
 
-      // Only replace items on initial load or filter change
+      // Only replace items on initial load
       if (isInitial) {
         setProducts(transformedItems)
       } else {
         // Append items for pagination
-        setProducts(prev => {
-          console.log('Updating products:', {
-            previousCount: prev.length,
-            newItemsCount: transformedItems.length,
-            totalAfterUpdate: prev.length + transformedItems.length,
-            firstNewId: transformedItems[0]?.id,
-            lastNewId: transformedItems[transformedItems.length - 1]?.id
-          })
-          return [...prev, ...transformedItems]
-        })
+        setProducts(prev => [...prev, ...transformedItems])
       }
       
       const newTotal = data.total || 1000 // Fallback to 1000 if total is not provided
@@ -120,70 +86,35 @@ export function useFeed() {
       const newOffset = currentOffset + transformedItems.length
       const newHasMore = transformedItems.length > 0 && newOffset < newTotal
       
-      console.log('Pagination update:', {
-        currentOffset,
-        newOffset,
-        newTotal,
-        receivedItems: transformedItems.length,
-        newHasMore,
-        currentStateOffset: offset
-      })
-
       setHasMore(newHasMore)
       setOffset(newOffset)
     } catch (error) {
       console.error('Error loading products:', error)
     } finally {
       setIsLoading(false)
-      loadingRef.current = false
     }
   }
 
   // Initial load with calculated number of items
   useEffect(() => {
     if (isInitialLoad.current) {
-      console.log('Initial load')
       const initialItemsCount = calculateInitialItems()
       loadProducts(initialItemsCount, 0, true)
       isInitialLoad.current = false
     }
   }, [])
 
-  // Regular filters update
-  useEffect(() => {
-    if (!isInitialLoad.current) {
-      console.log('Filters updated, reloading')
-      const initialItemsCount = calculateInitialItems()
-      setOffset(0)
-      loadProducts(initialItemsCount, 0, true)
-    }
-  }, [filters])
-
   const loadMore = () => {
-    console.log('loadMore called:', { 
-      isLoading, 
-      hasMore, 
-      currentOffset: offset, 
-      totalItems,
-      currentProductsCount: products.length
-    })
-    if (!isLoading && hasMore && !loadingRef.current) {
+    if (!isLoading && hasMore) {
       loadProducts(PAGE_SIZE, offset, false)
     }
-  }
-
-  const updateFilters = (newFilters: FilterState) => {
-    setFilters(newFilters)
-    setOffset(0)
   }
 
   return {
     products,
     isLoading,
-    filters,
     totalItems,
     hasMore,
-    updateFilters,
     loadMore
   }
 } 

@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const ANIMATION_SETTINGS = {
-  initial: { opacity: 0, scale: 0.9 },
+  initial: { opacity: 0, scale: 0 },
   animate: { opacity: 1, scale: 1 },
   exit: { opacity: 0, scale: 0.9 },
   transition: { duration: 0.3 }
