@@ -15,8 +15,8 @@ import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import { cn, sanitizeUIMessages } from "@/lib/utils";
 
 import { ArrowUpIcon, StopIcon } from "@/components/ui/icons";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "./button";
+import { Textarea } from "./textarea";
 
 const suggestedActions = [
   {

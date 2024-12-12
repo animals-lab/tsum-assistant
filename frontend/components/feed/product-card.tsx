@@ -1,7 +1,7 @@
 import { Product } from "@/types/feed"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "./ui/badge"
 import Image from "next/image"
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio"
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +14,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="w-[272px] group relative rounded-xl overflow-hidden">
-      <AspectRatio ratio={3/4}>
+      <AspectRatioPrimitive.Root ratio={3/4}>
         <Image
           src={product.picture}
           alt={product.name}
@@ -23,7 +23,7 @@ export function ProductCard({ product }: ProductCardProps) {
           sizes="272px"
           priority={false}
         />
-      </AspectRatio>
+      </AspectRatioPrimitive.Root>
       
       {/* Hover overlay with all information */}
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">

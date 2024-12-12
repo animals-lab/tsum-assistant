@@ -1,6 +1,6 @@
 import { SourceData } from "@llamaindex/chat-ui";
 import { Markdown as MarkdownUI } from "@llamaindex/chat-ui/widgets";
-import { useClientConfig } from "../hooks/use-config";
+import { useClientConfig } from "@/hooks/use-config";
 import { cn } from "@/lib/utils";
 
 const preprocessMedia = (content: string) => {

@@ -1,6 +1,6 @@
 import { ChatMessage, ChatMessages, useChatUI, getAnnotationData, MessageAnnotationType, Message } from "@llamaindex/chat-ui";
 import { CustomChatAgentEvents } from "./custom-agent-events";
-import { ChatMessageAvatar } from "./chat-avatar";
+import { ChatMessageAvatar } from "./custom-chat-avatar";
 import { CustomMessageContent } from "./custom-message-content";
 
 export function CustomChatMessages() {
