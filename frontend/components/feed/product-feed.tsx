@@ -2,15 +2,24 @@
 
 import { useFeed } from "@/hooks/use-feed"
 import { ProductCard } from "./product-card"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import type { Product } from "@/types/feed"
 import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
+
+const ANIMATION_SETTINGS = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.9 },
+  transition: { duration: 0.3 }
+};
 
 interface ProductFeedProps {
   chatProducts: Product[];
+  className?: string;
 }
 
-export function ProductFeed({ chatProducts }: ProductFeedProps) {
+export function ProductFeed({ chatProducts, className }: ProductFeedProps) {
   const {
     products,
     isLoading: isFeedLoading,
@@ -25,6 +34,8 @@ export function ProductFeed({ chatProducts }: ProductFeedProps) {
   const observerTarget = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (!observerTarget.current) return;
+
     const observer = new IntersectionObserver(
       entries => {
         if (entries[0].isIntersecting && hasMore && !isFeedLoading) {
@@ -33,52 +44,42 @@ export function ProductFeed({ chatProducts }: ProductFeedProps) {
       },
       { 
         threshold: 0,
-        rootMargin: '200px'
+        rootMargin: '100px'
       }
     )
 
-    const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.observe(currentTarget)
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget)
-      }
-    }
+    observer.observe(observerTarget.current)
+    return () => observer.disconnect()
   }, [hasMore, isFeedLoading, loadMore])
 
   return (
-    <div className="w-full">
-      <div className="mb-4 flex justify-between items-center">
-        <div className="text-sm text-gray-600 ml-20">
+    <div className={cn("w-full space-y-6", className)}>
+      {/* Stats bar */}
+      <div className="flex justify-between items-center px-4 sm:px-6">
+        <div className="text-sm text-gray-600">
           Showing {allProducts.length} of {totalItems + chatProducts.length} items
         </div>
         {chatProducts.length > 0 && (
           <div className="text-sm">
-            <span className="text-blue-600 mr-20">
+            <span className="text-blue-600">
               {chatProducts.length} items from chat
             </span>
           </div>
         )}
       </div>
+
+      {/* Products grid */}
       <div 
-        className="grid auto-rows-auto"
+        className="grid gap-4 sm:gap-6 justify-center"
         style={{
-          gap: '16px',
-          gridTemplateColumns: 'repeat(auto-fill, 272px)',
-          justifyContent: 'center'
+          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 272px))'
         }}
       >
         <AnimatePresence mode="popLayout">
-          {allProducts?.map((product, index) => (
+          {allProducts?.map((product) => (
             <motion.div 
-              key={`${product.id}-${index}`}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3 }}
+              key={product.id}
+              {...ANIMATION_SETTINGS}
               layout
             >
               <ProductCard product={product} />
@@ -86,17 +87,18 @@ export function ProductFeed({ chatProducts }: ProductFeedProps) {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Loading indicator */}
       {hasMore && (
         <div 
           ref={observerTarget}
-          className="h-24 mt-4 flex items-center justify-center"
+          className="h-16 flex items-center justify-center"
+          aria-hidden={!isFeedLoading}
         >
           {isFeedLoading && (
-            <div className="flex flex-col items-center gap-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <div className="text-sm text-gray-600">
-                Loading more items...
-              </div>
+            <div className="flex flex-col items-center gap-2" role="status">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#f8460f] border-t-transparent" />
+              <div className="text-sm text-gray-600">Loading more items...</div>
             </div>
           )}
         </div>
