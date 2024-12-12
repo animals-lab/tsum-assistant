@@ -52,12 +52,12 @@ export function ProductFeed({ chatProducts }: ProductFeedProps) {
   return (
     <div className="w-full">
       <div className="mb-4 flex justify-between items-center">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 ml-20">
           Showing {allProducts.length} of {totalItems + chatProducts.length} items
         </div>
         {chatProducts.length > 0 && (
           <div className="text-sm">
-            <span className="text-blue-600">
+            <span className="text-blue-600 mr-20">
               {chatProducts.length} items from chat
             </span>
           </div>

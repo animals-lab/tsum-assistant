@@ -27,12 +27,12 @@ export default function Page() {
   }, []);
 
   return (
-    <div className="flex w-full min-h-screen bg-gray-50">
+    <div className="flex w-full min-h-screen bg-white">
       <Chat 
         variant="sidebar"
         onNewProducts={handleNewChatProducts} 
       />
-      <main className="flex-1 min-h-screen p-4 pl-[632px] md:p-6 md:pl-[632px] lg:p-8 lg:pl-[632px]">
+      <main className="flex-1 min-h-screen p-4 pl-[532px] md:p-6 md:pl-[532px] lg:p-8 lg:pl-[532px]">
         <div className="max-w-[1800px] mx-auto">
           <ProductFeed chatProducts={chatProducts} />
         </div>
