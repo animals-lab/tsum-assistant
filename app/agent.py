@@ -20,7 +20,7 @@ from .workflow import (
     ToolRequestEvent,
     
 )
-from .workflow_events import OfferStreamEvent
+from .workflow_events import OfferStreamEvent, OfferFilteredEvent
 from .catalog.search_workflow import SearchWorkflow
 
 load_dotenv()
@@ -144,7 +144,7 @@ def get_catalog_search_tools() -> list[BaseTool]:
                   you can include it in the query.
 
         Returns:
-            Json array of offers
+            List of descriptions of found products
         """
         # logger.info(f"Querying catalog with: {kwargs}")
         # offers, _ = await query_catalog(**kwargs)
@@ -166,7 +166,8 @@ def get_catalog_search_tools() -> list[BaseTool]:
                 ctx.write_event_to_stream(ev)
 
         result = (await task).get("validated_offers", [])
-        return list(map(lambda x: x.model_dump_json(), result))
+        ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=result))
+        return list(map(lambda x: x.description, result))
 
     return [FunctionToolWithContext.from_defaults(async_fn=query_catalog_tool)]
 
@@ -202,6 +203,10 @@ def get_agent_configs() -> list[AgentConfig]:
     
             }
             ```
+
+            Agent will return list of descriptions of found products. (products will be shown separately)
+            You need to summarize the list of descriptions and return it as a single string not longer than 30 words.
+            Provide friendly and informative summary, focus on common characteristics of the products and their differences.
             """,
             tools=get_catalog_search_tools(),
         ),

@@ -108,6 +108,8 @@ class VercelStreamResponse(StreamingResponse):
                     response = self.convert_object(event.to_annotation(), prefix=self.ANNOTATION_PREFIX)
                 elif hasattr(event, "to_data"):
                     response = self.convert_object(event.to_data(), prefix=self.DATA_PREFIX)
+                elif hasattr(event, "to_markdown"):
+                    response = self.convert_text(event.to_markdown()+"\n\n")
                 elif isinstance(event, ProgressEvent):
                     response = self.convert_text(event.msg + " ")
 

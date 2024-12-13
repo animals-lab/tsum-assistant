@@ -16,7 +16,7 @@ from llama_index.core import Settings
 from .query import query_catalog
 from .models import Offer, ShortOffer, GenderType, StructuredQuery
 from llama_index.core.llms import ChatMessage, MessageRole
-from ..workflow_events import OfferStreamEvent
+from ..workflow_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 
 class ProcessedQueryEvent(Event):
@@ -84,8 +84,13 @@ class SearchWorkflow(Workflow):
         """
         Calls the query_catalog function with the structured query.
         """
-        offers, scores = await query_catalog(ev.structured_query)
-        ctx.write_event_to_stream(OfferStreamEvent(offers=offers))
+        query = ev.structured_query
+        offers, scores = await query_catalog(query)
+        if (len(offers) == 0):
+            query.category = None
+            offers, scores = await query_catalog(query)
+        
+        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers))
         return QueryResultsEvent(
             offers=offers[: self.validation_limit],
             scores=scores[: self.validation_limit],
@@ -113,11 +118,14 @@ class SearchWorkflow(Workflow):
 
         threshhold = 50
         validated_offers = [
-            offer for offer, score in zip(ev.offers, scores) if score >= threshhold
+            offer for offer, score in sorted(zip(ev.offers, scores), key=lambda x: x[1], reverse=True) if score >= threshhold
         ]
-        not_validated_offers = [
-            offer for offer, score in zip(ev.offers, scores) if score < threshhold
-        ]
+   
+        #  for some reason this event missed if sent from here, sending from agent function
+        # ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=validated_offers))
+        # not_validated_offers = [
+        #     offer for offer, score in zip(ev.offers, scores) if score < threshhold
+        # ]
 
         return ValidationResultEvent(
             validated_offers=validated_offers,
