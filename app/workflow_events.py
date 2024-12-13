@@ -24,7 +24,7 @@ class AgentRunEvent(Event):
         # TODO UGLY!
         agent_human_names = {
             "TransferToAgent": "Координатор",
-            "query_catalog_short": "Поиск в каталоге",
+            "query_catalog_tool": "Поиск в каталоге",
             "fetch_fashion_trends": "Эксперт по стилю",
         }
 
@@ -61,4 +61,4 @@ class OfferFilteredEvent(Event):
         )
 
         cards = [template.format(offer=offer) for offer in self.offers]
-        return "\n\n".join(cards)
+        return "\n\n\n".join(cards)
