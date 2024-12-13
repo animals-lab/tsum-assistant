@@ -142,9 +142,9 @@ def get_catalog_search_tools() -> list[BaseTool]:
             query: A string containing the search query. This can be a natural language query like
                   "белые кеды для мужчин" or "элегантное черное платье".  If you know something about user preferences or profile
                   you can include it in the query.
-        
+
         Returns:
-            A text response with search status, results will be streamed separately
+            Json array of offers
         """
         # logger.info(f"Querying catalog with: {kwargs}")
         # offers, _ = await query_catalog(**kwargs)
@@ -156,11 +156,18 @@ def get_catalog_search_tools() -> list[BaseTool]:
         # return [
         #     ShortOffer.from_offer(offer).model_dump() for offer in offers[:5]
         # ]
-        workflow = SearchWorkflow(timeout=20, ctx=ctx)
-        result = await workflow.run(input_query=query)
-        
-        return result.get("validated_offers", [])
-    
+        #see https://github.com/run-llama/llama_index/discussions/15838
+        workflow = SearchWorkflow(timeout=30, verbose=True)
+        # task = asyncio.create_task(workflow.run(input_query=query))
+        task = workflow.run(input_query=query)
+
+        async for ev in workflow.stream_events():
+            if isinstance(ev, OfferStreamEvent):
+                ctx.write_event_to_stream(ev)
+
+        result = (await task).get("validated_offers", [])
+        return list(map(lambda x: x.model_dump_json(), result))
+
     return [FunctionToolWithContext.from_defaults(async_fn=query_catalog_tool)]
 
 

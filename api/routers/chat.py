@@ -27,7 +27,7 @@ async def chat_endpoint(request: Request):
         last_message = messages[-1]
         user_message = last_message.get("content", "")
 
-        agent = ConciergeAgent(timeout=60)
+        agent = ConciergeAgent(timeout=60, verbose=True)
 
         event_handler = agent.run(
             user_msg=user_message,
