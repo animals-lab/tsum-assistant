@@ -22,6 +22,7 @@ export function Markdown({
   const processedContent = preprocessMedia(content);
   return (
     <div className={cn("prose dark:prose-invert max-w-none", 
+      "[&_img]:max-h-[150px] [&_img]:max-w-[300px] [&_img]:object-contain",
       "[&_a]:text-[#f8460f] [&_a]:font-normal [&_a:hover]:opacity-80 [&_a]:transition-opacity [&_a]:no-underline",
       className
     )}>

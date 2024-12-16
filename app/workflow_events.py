@@ -54,10 +54,9 @@ class OfferFilteredEvent(Event):
     def to_markdown(self) -> str:
         """Convert offer to markdown format."""
         template = (
-            "**{offer.name} {offer.vendor}**\n"
+            "[{offer.name} {offer.vendor}]({offer.url})\n"
             "- ![{offer.name}]({offer.picture})\n"
             "- **Цена:** {offer.price:,.0f} ₽\n"
-            "- [Ссылка на товар]({offer.url})\n"
         )
 
         cards = [template.format(offer=offer) for offer in self.offers]
