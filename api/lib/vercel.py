@@ -1,14 +1,13 @@
-from fastapi import Request
-from fastapi.responses import StreamingResponse
+import asyncio
 import json
 import logging
-from typing import AsyncGenerator, Any, Dict, Optional
-import uuid
-from typing import Awaitable
-import asyncio
+from typing import Any, AsyncGenerator, Awaitable
+
 from aiostream import stream
+from fastapi.responses import StreamingResponse
+
 from app.workflow_events import AgentRunEvent, ProgressEvent
-from llama_index.core.llms import ChatMessage
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO,
@@ -32,9 +31,7 @@ class VercelStreamResponse(StreamingResponse):
         super().__init__(content=content)
 
     async def content_generator(self, event_handler, events):
-        stream = self._create_stream(
-            event_handler, events
-        )
+        stream = self._create_stream(event_handler, events)
         is_stream_started = False
         try:
             async with stream.stream() as streamer:
@@ -74,7 +71,7 @@ class VercelStreamResponse(StreamingResponse):
                     final_response += str(token.delta)
                     yield self.convert_text(token.delta)
             else:
-                if content:= result.get('response'):
+                if content := result.get("response"):
                     final_response += content
                     yield self.convert_text(content)
                 elif hasattr(result, "response"):
@@ -86,25 +83,20 @@ class VercelStreamResponse(StreamingResponse):
                 else:
                     yield self.convert_text(result)
 
-            # Generate next questions if next question prompt is configured
-            # question_data = await self._generate_next_questions(
-            #     chat_data.messages, final_response
-            # )
-            # if question_data:
-            #     yield self.convert_data(question_data)
-
-            # TODO: stream sources
-
         # Yield the events from the event handler
         async def _event_generator():
             async for event in events:
                 response = None
                 if hasattr(event, "to_annotation"):
-                    response = self.convert_object(event.to_annotation(), prefix=self.ANNOTATION_PREFIX)
+                    response = self.convert_object(
+                        event.to_annotation(), prefix=self.ANNOTATION_PREFIX
+                    )
                 elif hasattr(event, "to_data"):
-                    response = self.convert_object(event.to_data(), prefix=self.DATA_PREFIX)
+                    response = self.convert_object(
+                        event.to_data(), prefix=self.DATA_PREFIX
+                    )
                 elif hasattr(event, "to_markdown"):
-                    response = self.convert_text(event.to_markdown()+"\n\n")
+                    response = self.convert_text(event.to_markdown() + "\n\n")
                 elif isinstance(event, ProgressEvent):
                     response = self.convert_text(event.msg + " ")
 
@@ -121,8 +113,8 @@ class VercelStreamResponse(StreamingResponse):
         return f"{cls.TEXT_PREFIX}{token}\n"
 
     @classmethod
-    def convert_object(cls, data: dict, prefix: str=None):
-        if prefix is None: 
+    def convert_object(cls, data: dict, prefix: str = None):
+        if prefix is None:
             prefix = cls.ANNOTATION_PREFIX
 
         data_str = json.dumps(data)
@@ -132,19 +124,6 @@ class VercelStreamResponse(StreamingResponse):
     def convert_error(cls, error: str):
         error_str = json.dumps(error)
         return f"{cls.ERROR_PREFIX}{error_str}\n"
-
-    # @staticmethod
-    # async def _generate_next_questions(chat_history: List[Message], response: str):
-    #     questions = await NextQuestionSuggestion.suggest_next_questions(
-    #         chat_history, response
-    #     )
-    #     if questions:
-    #         return {
-    #             "type": "suggested_questions",
-    #             "data": questions,
-    #         }
-    #     return None
-
 
 # class VercelStreamResponse(StreamingResponse):
 #     """
