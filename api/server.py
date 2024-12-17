@@ -51,3 +51,6 @@ async def health_check():
 # Add the routers
 app.include_router(catalog.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+
+from .routers.test_stream import test_stream
+app.post("/api/test-stream")(test_stream)
