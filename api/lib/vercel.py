@@ -27,15 +27,12 @@ class VercelStreamResponse(StreamingResponse):
     ANNOTATION_PREFIX = "8:"
     ERROR_PREFIX = "3:"
 
-    def __init__(self, request: Request, *args, **kwargs):
-        self.request = request
+    def __init__(self, *args, **kwargs):
         content = self.content_generator(*args, **kwargs)
         super().__init__(content=content)
 
     async def content_generator(self, event_handler, events):
         stream = self._create_stream(
-            self.request, 
-            # self.chat_data, 
             event_handler, events
         )
         is_stream_started = False
@@ -63,8 +60,6 @@ class VercelStreamResponse(StreamingResponse):
 
     def _create_stream(
         self,
-        request: Request,
-        # chat_data: ChatData,
         event_handler: Awaitable,
         events: AsyncGenerator,
         verbose: bool = True,

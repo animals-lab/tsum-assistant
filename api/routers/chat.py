@@ -40,8 +40,6 @@ async def chat_endpoint(request: Request):
         )
 
         return VercelStreamResponse(
-            request=request,
-            # chat_data=data,
             event_handler=event_handler,
             events=agent.stream_events(),
         )
