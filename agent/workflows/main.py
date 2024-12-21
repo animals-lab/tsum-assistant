@@ -34,6 +34,11 @@ class ProcessInputResult(BaseModel):
     execution_plan: str = Field(
         description="Execution plan for the request, each step is separated by a newline"
     )
+
+    right_away_answer: Optional[str] = Field(
+        default=None,
+        description="Answer to the user request right away, if nothing else needed",
+    )
     catalog_search_required: bool = Field(
         description="Whether catalog search is required"
     )
@@ -78,8 +83,8 @@ class MainWorkflow(Workflow):
             You will also need to determine if catalog search is required and if fashion trends search is required.
 
             If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.
-
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
+            If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
 
             User request: {ev.user_msg}
             """
@@ -94,6 +99,9 @@ class MainWorkflow(Workflow):
         )
 
         await ctx.set("processed_input", res)
+
+        if res.right_away_answer:
+            return StopEvent(result=res.right_away_answer)
 
         if res.catalog_search_required:
             ctx.send_event(CatalogRequestEvent(structured_query=res.search_query))
