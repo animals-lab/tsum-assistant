@@ -23,6 +23,7 @@ class AgentRunEvent(Event):
     def to_annotation(self) -> dict:
         # TODO UGLY!
         agent_human_names = {
+            "main": "Ассистент",
             "TransferToAgent": "Координатор",
             "query_catalog_tool": "Поиск в каталоге",
             "fetch_fashion_trends": "Эксперт по стилю",

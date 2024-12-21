@@ -98,7 +98,7 @@ class VercelStreamResponse(StreamingResponse):
                 elif hasattr(event, "to_markdown"):
                     response = self.convert_text(event.to_markdown() + "\n\n")
                 elif isinstance(event, ProgressEvent):
-                    response = self.convert_text(event.msg + " ")
+                    response = self.convert_text(event.msg)
 
                 if response is not None:
                     yield response

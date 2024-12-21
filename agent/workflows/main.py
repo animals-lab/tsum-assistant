@@ -24,7 +24,7 @@ from agent.events.workflow import (
 
 from pydantic import BaseModel, Field
 from app.catalog.search_workflow import SearchWorkflow
-from app.workflow_events import OfferFilteredEvent
+from app.workflow_events import OfferFilteredEvent, ProgressEvent, AgentRunEvent
 from app.catalog.models import StructuredQuery
 from app.trends.trend_perplexity import fetch_fashion_trends
 
@@ -88,7 +88,7 @@ class MainWorkflow(Workflow):
 
             User request: {ev.user_msg}
             """
-
+        ctx.write_event_to_stream(ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос..."))
         history = self.chat_memory.get_all()
         if history:
             history_str = "\n".join([f"{msg.role}: {msg.content}" for msg in history])
@@ -97,6 +97,7 @@ class MainWorkflow(Workflow):
         res: ProcessInputResult = await self.llm.astructured_predict(
             output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
         )
+        print(f"Processed input: {res}")
 
         await ctx.set("processed_input", res)
 
@@ -117,18 +118,28 @@ class MainWorkflow(Workflow):
         """
         Execute catalog search
         """
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="query_catalog_tool", msg="Начинаем поиск.")
+        )
         workflow = SearchWorkflow(timeout=30, verbose=True)
-        task = workflow.run(structured_query=ev.structured_query)
+        task = workflow.run(structured_query=ev.structured_query, stream=True)
 
         async for ev in workflow.stream_events():
             # if isinstance(ev, OfferStreamEvent):
             ctx.write_event_to_stream(ev)
+
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="query_catalog_tool", msg="Отбираем лучшие предложения.")
+        )
 
         result = (await task).get("validated_offers", [])
         ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=result))
 
         summary = "\n\n".join([offer.description for offer in result])
         print(f"Catalog summary: {summary}")
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="query_catalog_tool", msg="Завершаем поиск.")
+        )
         return CatalogResponseEvent(catalog_summary=summary)
 
     @step
@@ -139,9 +150,14 @@ class MainWorkflow(Workflow):
         Execute fashion trends search
         optionnaly search catalog for examples
         """
-
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="fetch_fashion_trends", msg="Начинаем поиск информации о модных трендах.")
+        )
         trends = await fetch_fashion_trends(ev.query)
         print(f"Fashion trends: {trends}")
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="fetch_fashion_trends", msg="Завершаем поиск.")
+        )
         return FashionTrendsResponseEvent(response=trends)
 
     @step
@@ -163,6 +179,9 @@ class MainWorkflow(Workflow):
         if res is None:
             return None
 
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="main", msg="Подводим итоги.")
+        )
         context_parts = []
 
         for ev in res:
@@ -188,12 +207,18 @@ class MainWorkflow(Workflow):
             """
         )
 
-        # TODO: stream result
-        answer = await self.llm.apredict(
+        resp = await self.llm.astream(
             prompt,
             context_placeholder="\n\n".join(context_parts),
             user_msg=input.request_summary,
         )
+
+        answer = ""
+
+        async for token in resp:
+            answer += token
+            # streaming breaks frontend for now
+            # ctx.write_event_to_stream(ev=ProgressEvent(msg=token))
 
         return StopEvent(result=answer)
 
