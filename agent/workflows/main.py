@@ -31,9 +31,9 @@ from app.trends.trend_perplexity import fetch_fashion_trends
 
 class ProcessInputResult(BaseModel):
     request_summary: str = Field(description="Summary of user request")
-    execution_plan: str = Field(
-        description="Execution plan for the request, each step is separated by a newline"
-    )
+    # execution_plan: str = Field(
+    #     description="Execution plan for the request, each step is separated by a newline"
+    # )
 
     right_away_answer: Optional[str] = Field(
         default=None,
