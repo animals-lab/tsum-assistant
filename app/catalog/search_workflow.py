@@ -19,6 +19,7 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from ..workflow_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 
+
 class ProcessedQueryEvent(Event):
     structured_query: StructuredQuery
 
@@ -30,11 +31,11 @@ class QueryResultsEvent(Event):
 
 class ValidationResultEvent(Event):
     validated_offers: List[Offer]
-    # not_validated_offers: List[Offer]
+    not_validated_offers: List[Offer]
 
 
 class SearchWorkflow(Workflow):
-    validation_limit = 5
+    validation_limit = 3
     query_limit = 20
     score_threshold = 70
 
@@ -50,30 +51,34 @@ class SearchWorkflow(Workflow):
         Processes the unstructured input and creates a structured query.
         Decides if a query is needed based on the input.
         """
-        input_query = ev.input_query
-        await ctx.set("input_query", input_query)
+        structured_query = ev.get("structured_query", None)
+        input_query = ev.get("input_query", None)
 
-        if not input_query:
+        if not structured_query:
+            input_query = ev.get("input_query")
+
+            sllm = self.llm.as_structured_llm(StructuredQuery)
+            query: StructuredQuery = await sllm.achat(
+                [
+                    ChatMessage(
+                        role=MessageRole.SYSTEM,
+                        content="From user input create a structured query for the catalog search.",
+                    ),
+                    ChatMessage(
+                        role=MessageRole.USER,
+                        content=input_query,
+                    ),
+                ]
+            )
+
+            structured_query = query.raw
+            structured_query.limit = self.query_limit
+
+        if not structured_query:
             return StopEvent(result="No query provided.")
 
-        # Use LLM to parse the input query string into structured query using Pydantic
-
-        sllm = self.llm.as_structured_llm(StructuredQuery)
-        query: StructuredQuery = await sllm.achat(
-            [
-                ChatMessage(
-                    role=MessageRole.SYSTEM,
-                    content="From user input create a structured query for the catalog search.",
-                ),
-                ChatMessage(
-                    role=MessageRole.USER,
-                    content=input_query,
-                ),
-            ]
-        )
-
-        structured_query = query.raw
-        structured_query.limit = self.query_limit
+        await ctx.set("structured_query", structured_query)
+        await ctx.set("input_query", input_query)
 
         return ProcessedQueryEvent(structured_query=structured_query)
 
@@ -86,10 +91,10 @@ class SearchWorkflow(Workflow):
         """
         query = ev.structured_query
         offers, scores = await query_catalog(query)
-        if (len(offers) == 0):
+        if len(offers) == 0:
             query.category = None
             offers, scores = await query_catalog(query)
-        
+
         ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers))
         return QueryResultsEvent(
             offers=offers[: self.validation_limit],
@@ -106,29 +111,37 @@ class SearchWorkflow(Workflow):
         validated_offers = []
         not_validated_offers = []
 
-        prompt = f"User searched for product with query '{await ctx.get("input_query")}', please score the offer '{{offer}}' on how well it matches the query. score must be integer between 0 and 100. Return only the score. "
+        # Get the query text in a safer way
+        structured_query = await ctx.get("structured_query")
+        input_query = await ctx.get("input_query")
+        query_text = input_query if input_query else structured_query.model_dump_json()
+
+        prompt = "User searched for product with query '{query_text}', please score the offer '{offer}' on how well it matches the query. score must be integer between 0 and 100. Return only the score. "
 
         res = []
 
         for offer in ev.offers:
             res.append(
-                self.llm.acomplete(prompt=prompt.format(offer=offer.description))
+                self.llm.acomplete(prompt=prompt.format(query_text=query_text, offer=offer.description))
             )
         scores = [int(res.text) for res in await asyncio.gather(*res)]
 
         threshhold = 50
         validated_offers = [
-            offer for offer, score in sorted(zip(ev.offers, scores), key=lambda x: x[1], reverse=True) if score >= threshhold
+            offer
+            for offer, score in sorted(
+                zip(ev.offers, scores), key=lambda x: x[1], reverse=True
+            )
+            if score >= threshhold
         ]
-   
-        #  for some reason this event missed if sent from here, sending from agent function
-        # ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=validated_offers))
-        # not_validated_offers = [
-        #     offer for offer, score in zip(ev.offers, scores) if score < threshhold
-        # ]
+
+        not_validated_offers = [
+            offer for offer, score in zip(ev.offers, scores) if score < threshhold
+        ]
 
         return ValidationResultEvent(
             validated_offers=validated_offers,
+            not_validated_offers=not_validated_offers,
         )
 
     @step
@@ -138,7 +151,7 @@ class SearchWorkflow(Workflow):
         """
         result = {
             "validated_offers": ev.validated_offers,
-            # "not_validated_offers": ev.not_validated_offers,
+            "not_validated_offers": ev.not_validated_offers,
         }
         return StopEvent(result=result)
 

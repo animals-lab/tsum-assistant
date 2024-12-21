@@ -71,17 +71,17 @@ class VercelStreamResponse(StreamingResponse):
                     final_response += str(token.delta)
                     yield self.convert_text(token.delta)
             else:
-                if content := result.get("response"):
-                    final_response += content
-                    yield self.convert_text(content)
-                elif hasattr(result, "response"):
-                    content = result.response.message.content
-                    if content:
-                        for token in content:
-                            final_response += str(token)
-                            yield self.convert_text(token)
-                else:
-                    yield self.convert_text(result)
+                # if content := result.get("response"):
+                #     final_response += content
+                #     yield self.convert_text(content)
+                # elif hasattr(result, "response"):
+                #     content = result.response.message.content
+                #     if content:
+                #         for token in content:
+                #             final_response += str(token)
+                #             yield self.convert_text(token)
+                # else:
+                yield self.convert_text(result)
 
         # Yield the events from the event handler
         async def _event_generator():
