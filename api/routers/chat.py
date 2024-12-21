@@ -29,7 +29,11 @@ async def chat_endpoint(request: Request):
         last_message = messages[-1]
         user_message = last_message.get("content", "")
 
-        memory = ChatMemoryBuffer.from_defaults(chat_history=messages[:-1])
+        memory = ChatMemoryBuffer.from_defaults(
+            chat_history=[
+                ChatMessage(role=m["role"], content=m["content"]) for m in messages[:-1]
+            ]
+        )
         agent = MainWorkflow(timeout=60, verbose=True, chat_memory=memory)
 
         event_handler = agent.run(
