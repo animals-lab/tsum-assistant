@@ -217,6 +217,9 @@ class StructuredQuery(BaseModel):
     offset: int = Field(
         0, description="Number of results to skip for pagination (default is 0)."
     )
+    complete: bool = Field(
+        False, description="Must be set to true by agent when it creates a query!"
+    )
 
 
 class CatalogQueryResponse(BaseModel):

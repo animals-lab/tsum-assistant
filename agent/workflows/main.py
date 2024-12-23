@@ -20,7 +20,7 @@ from agent.events.workflow import (
     FashionTrendsRequestEvent,
     FashionTrendsResponseEvent,
 )
-
+import datetime
 
 from pydantic import BaseModel, Field
 from app.catalog.search_workflow import SearchWorkflow
@@ -54,6 +54,9 @@ class ProcessInputResult(BaseModel):
 
 
 class MainWorkflow(Workflow):
+    _streaming = False
+    _start_time: datetime.datetime | None = None
+
     def __init__(self, chat_memory: ChatMemoryBuffer, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.llm = OpenAI(model="gpt-4o-mini")
@@ -62,6 +65,7 @@ class MainWorkflow(Workflow):
     @step
     async def init(self, ctx: Context, ev: StartEvent) -> ProcessInputRequestEvent:
         await ctx.set("pending_events", [])
+        self._start_time = datetime.datetime.now()
         return ProcessInputRequestEvent(user_msg=ev.user_msg)
 
     @step
@@ -78,25 +82,45 @@ class MainWorkflow(Workflow):
         3. Request fashion trends search if required
         """
         prompt = f"""
-            You are a helpful assistant that helps user to find the best offer for their request. Please answer in request language.
+            You are a helpful shopping assistant that helps user to find the best offer for their request. Please answer in request language.
             You will be given a user request and you will need to create a plan of execution for the request and it's summary.
             You will also need to determine if catalog search is required and if fashion trends search is required.
 
             If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
             If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
-
+    
             User request: {ev.user_msg}
             """
-        ctx.write_event_to_stream(ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос..."))
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос...")
+        )
         history = self.chat_memory.get_all()
         if history:
             history_str = "\n".join([f"{msg.role}: {msg.content}" for msg in history])
             prompt += f"\n\n Previous conversation history: {history_str}"
 
-        res: ProcessInputResult = await self.llm.astructured_predict(
-            output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
-        )
+        if self._streaming:
+            res = await self.llm.astream_structured_predict(
+                output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
+            )
+
+            search_launched = False
+
+            async for token in res:
+                if not search_launched:
+                    q = token.search_query
+                    print(q)
+                    if q and q.complete and token.catalog_search_required:
+                        ctx.send_event(CatalogRequestEvent(structured_query=q))
+                        search_launched = True
+
+            res = token
+        else:
+            res = await self.llm.astructured_predict(
+                output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
+            )
+
         print(f"Processed input: {res}")
 
         await ctx.set("processed_input", res)
@@ -104,10 +128,11 @@ class MainWorkflow(Workflow):
         if res.right_away_answer:
             return StopEvent(result=res.right_away_answer)
 
-        if res.catalog_search_required:
-            ctx.send_event(CatalogRequestEvent(structured_query=res.search_query))
-        if res.trends_search_required:
-            ctx.send_event(FashionTrendsRequestEvent(query=res.trends_query))
+        if not self._streaming:
+            if res.catalog_search_required:
+                ctx.send_event(CatalogRequestEvent(structured_query=res.search_query))
+            if res.trends_search_required:
+                ctx.send_event(FashionTrendsRequestEvent(query=res.trends_query))
 
         return ProcessInputResultEvent()
 
@@ -129,7 +154,9 @@ class MainWorkflow(Workflow):
             ctx.write_event_to_stream(ev)
 
         ctx.write_event_to_stream(
-            ev=AgentRunEvent(name="query_catalog_tool", msg="Отбираем лучшие предложения.")
+            ev=AgentRunEvent(
+                name="query_catalog_tool", msg="Отбираем лучшие предложения."
+            )
         )
 
         result = (await task).get("validated_offers", [])
@@ -151,7 +178,10 @@ class MainWorkflow(Workflow):
         optionnaly search catalog for examples
         """
         ctx.write_event_to_stream(
-            ev=AgentRunEvent(name="fetch_fashion_trends", msg="Начинаем поиск информации о модных трендах.")
+            ev=AgentRunEvent(
+                name="fetch_fashion_trends",
+                msg="Начинаем поиск информации о модных трендах.",
+            )
         )
         trends = await fetch_fashion_trends(ev.query)
         print(f"Fashion trends: {trends}")
@@ -179,9 +209,7 @@ class MainWorkflow(Workflow):
         if res is None:
             return None
 
-        ctx.write_event_to_stream(
-            ev=AgentRunEvent(name="main", msg="Подводим итоги.")
-        )
+        ctx.write_event_to_stream(ev=AgentRunEvent(name="main", msg="Подводим итоги."))
         context_parts = []
 
         for ev in res:
@@ -219,7 +247,10 @@ class MainWorkflow(Workflow):
             answer += token
             # streaming breaks frontend for now
             # ctx.write_event_to_stream(ev=ProgressEvent(msg=token))
-
+        
+        elapsed_seconds = (datetime.datetime.now() - self._start_time).total_seconds()
+        elapsed_str = f"{elapsed_seconds:.2f} секунд"
+        ctx.write_event_to_stream(ev=AgentRunEvent(name="main", msg=f"Завершаем работу. Запрос выполнен за {elapsed_str}."))
         return StopEvent(result=answer)
 
 
@@ -235,30 +266,30 @@ if __name__ == "__main__":
             llm=OpenAI(model="gpt-4o-mini"),
         )
 
-        memory.put(
-            ChatMessage(
-                role="user",
-                content="Найди черную кепку!",
-            )
-        )
-        memory.put(
-            ChatMessage(
-                role="assistant",
-                content="""
-                    Мы нашли несколько отличных черных кепок:
-                    1. **Мягкая кепка с широким козырьком** - из эластичного хлопкового текстиля с полиэстером, хорошо пропускает воздух, регулируется узк  им ремешком.
-                    2. **Кепка из регенерированного нейлона Re-Nylon** - стильная альтернатива бейсболке, с мягкой тульей и широким козырьком, брендированный патч сзади.
-                    3. **Легкая кепка из нейлона и стрейчевых волокон** - защищает от ветра и дождя, идеальна для межсезонья, с вышитым логотипом спереди.
-                    """,
-            )
-        )
+        # memory.put(
+        #     ChatMessage(
+        #         role="user",
+        #         content="Найди черную кепку!",
+        #     )
+        # )
+        # memory.put(
+        #     ChatMessage(
+        #         role="assistant",
+        #         content="""
+        #             Мы нашли несколько отличных черных кепок:
+        #             1. **Мягкая кепка с широким козырьком** - из эластичного хлопкового текстиля с полиэстером, хорошо пропускает воздух, регулируется узк  им ремешком.
+        #             2. **Кепка из регенерированного нейлона Re-Nylon** - стильная альтернатива бейсболке, с мягкой тульей и широким козырьком, брендированный патч сзади.
+        #             3. **Легкая кепка из нейлона и стрейчевых волокон** - защищает от ветра и дождя, идеальна для межсезонья, с вышитым логотипом спереди.
+        #             """,
+        #     )
+        # )
         workflow = MainWorkflow(
             verbose=True,
             timeout=None,
             chat_memory=memory,
         )
         # res = await workflow.run(user_msg="Что сейчас модно в китае?")
-        res = await workflow.run(user_msg="А теперь белую!")
+        res = await workflow.run(user_msg="Найди белую кепку!")
         print(res)
         draw_all_possible_flows(MainWorkflow, filename="basic_workflow.html")
         draw_most_recent_execution(workflow, filename="basic_workflow_execution.html")
