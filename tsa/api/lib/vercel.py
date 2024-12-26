@@ -6,7 +6,7 @@ from typing import Any, AsyncGenerator, Awaitable
 from aiostream import stream
 from fastapi.responses import StreamingResponse
 
-from app.workflow_events import AgentRunEvent, ProgressEvent
+from tsa.chat.chat_events import AgentRunEvent, ProgressEvent
 
 # Set up logging
 logging.basicConfig(

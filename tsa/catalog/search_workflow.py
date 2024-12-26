@@ -16,7 +16,9 @@ from llama_index.core import Settings
 from .query import query_catalog
 from .models import Offer, ShortOffer, GenderType, StructuredQuery
 from llama_index.core.llms import ChatMessage, MessageRole
-from ..workflow_events import OfferStreamEvent, OfferFilteredEvent
+
+# TODO isolate own events!
+from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 
 

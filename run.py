@@ -100,7 +100,7 @@ async def start_backend_dev():
                     env[key] = value
     
     process = await asyncio.create_subprocess_shell(
-        "pdm run uvicorn api.server:app --reload --host 0.0.0.0 --port 8000",
+        "pdm run uvicorn tsa.api.server:app --reload --host 0.0.0.0 --port 8000",
         stdout=sys.stdout,
         stderr=sys.stderr,
         shell=True,
@@ -143,7 +143,7 @@ async def start_production_server():
                     env[key] = value
     
     process = await asyncio.create_subprocess_shell(
-        "pdm run uvicorn api.server:app --host 0.0.0.0 --port 8000",
+        "pdm run uvicorn tsa.api.server:app --host 0.0.0.0 --port 8000",
         stdout=sys.stdout,
         stderr=sys.stderr,
         shell=True,

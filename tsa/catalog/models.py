@@ -190,6 +190,20 @@ class ShortOffer(BaseModel):
         )
 
 
+
+
+
+class CatalogQueryResponse(BaseModel):
+    items: List[Offer]
+    scores: List[float]
+
+
+from pydantic import BaseModel, Field
+from typing import Optional, List, Literal
+
+GenderType = Literal["Мужской", "Женский", "Детский"]
+
+
 class StructuredQuery(BaseModel):
     query_text: Optional[str] = Field(
         None,
@@ -222,6 +236,4 @@ class StructuredQuery(BaseModel):
     )
 
 
-class CatalogQueryResponse(BaseModel):
-    items: List[Offer]
-    scores: List[float]
+

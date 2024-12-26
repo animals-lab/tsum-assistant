@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.catalog.models import GenderType, Offer, StructuredQuery, CatalogQueryResponse
-from app.catalog.query import product_queue, query_catalog
+from tsa.catalog.models import GenderType, StructuredQuery, CatalogQueryResponse
+from tsa.catalog.query import  query_catalog
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

@@ -4,7 +4,7 @@ import llama_index.core
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import catalog, chat
+from tsa.api.routers import catalog, chat
 from llama_index.llms.openai import OpenAI
 from llama_index.core.settings import Settings
 

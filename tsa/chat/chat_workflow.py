@@ -1,32 +1,25 @@
-from llama_index.core.settings import Settings
-from llama_index.llms.openai import OpenAI
-from llama_index.core.workflow import (
-    Workflow,
-    Context,
-    StartEvent,
-    StopEvent,
-    step,
-)
-from llama_index.core.prompts import PromptTemplate
-from llama_index.core.memory import ChatMemoryBuffer
-from llama_index.core.llms import ChatMessage
-
+import datetime
 from typing import Any, Optional
-from agent.events.workflow import (
-    ProcessInputRequestEvent,
-    ProcessInputResultEvent,
-    CatalogResponseEvent,
+
+from llama_index.core.memory import ChatMemoryBuffer
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step
+from llama_index.llms.openai import OpenAI
+from pydantic import BaseModel, Field
+
+from tsa.chat.chat_events import (
     CatalogRequestEvent,
+    CatalogResponseEvent,
     FashionTrendsRequestEvent,
     FashionTrendsResponseEvent,
+    ProcessInputRequestEvent,
+    ProcessInputResultEvent,
 )
-import datetime
+from tsa.catalog.models import StructuredQuery
 
-from pydantic import BaseModel, Field
-from app.catalog.search_workflow import SearchWorkflow
-from app.workflow_events import OfferFilteredEvent, ProgressEvent, AgentRunEvent
-from app.catalog.models import StructuredQuery
-from app.trends.trend_perplexity import fetch_fashion_trends
+from tsa.catalog.search_workflow import SearchWorkflow
+from tsa.styleguide.trend_perplexity import fetch_fashion_trends
+from tsa.chat.chat_events import AgentRunEvent, OfferFilteredEvent, ProgressEvent
 
 
 class ProcessInputResult(BaseModel):
@@ -247,19 +240,24 @@ class MainWorkflow(Workflow):
             answer += token
             # streaming breaks frontend for now
             # ctx.write_event_to_stream(ev=ProgressEvent(msg=token))
-        
+
         elapsed_seconds = (datetime.datetime.now() - self._start_time).total_seconds()
         elapsed_str = f"{elapsed_seconds:.2f} секунд"
-        ctx.write_event_to_stream(ev=AgentRunEvent(name="main", msg=f"Завершаем работу. Запрос выполнен за {elapsed_str}."))
+        ctx.write_event_to_stream(
+            ev=AgentRunEvent(
+                name="main", msg=f"Завершаем работу. Запрос выполнен за {elapsed_str}."
+            )
+        )
         return StopEvent(result=answer)
 
 
 if __name__ == "__main__":
+    import asyncio
+
     from llama_index.utils.workflow import (
         draw_all_possible_flows,
         draw_most_recent_execution,
     )
-    import asyncio
 
     async def main():
         memory = ChatMemoryBuffer.from_defaults(

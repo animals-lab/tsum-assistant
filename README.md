@@ -1,6 +1,6 @@
-# Llama Agent
+# Tsum Shopping Assistant / tsa
 
-A modern full-stack boilerplate project featuring Next.js frontend with TypeScript and FastAPI backend, powered by LlamaIndex for building AI agent workflows. This template provides a solid foundation for building scalable AI-enabled web applications with a clean architecture.
+GenAI Shopping assistant for TSUM.
 
 ## Tech Stack
 
@@ -13,11 +13,11 @@ A modern full-stack boilerplate project featuring Next.js frontend with TypeScri
 - PNPM for efficient package management
 
 ### Backend
-- FastAPI 0.109.1+
+- FastAPI
 - Python 3.12
 - Uvicorn ASGI server
 - PDM for dependency management
-- Llama Index 0.12.3
+- Llama Index
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ pdm run prod
 ## Project Structure
 
 ```
-llama-agent/
+tsa/
 ├── frontend/          # Next.js frontend application
 │   ├── app/          # Next.js app directory (App Router)
 │   ├── components/   # React components
@@ -61,13 +61,14 @@ llama-agent/
 │   ├── routers/     # API route handlers
 │   └── server.py    # Main FastAPI application
 │
-├── app/              # Core Python application code
-│   ├── agent.py     # Agent implementation
-│   └── vercel.py    # Vercel-related functionality
-│
-├── run.py           # Development and production server runner
-├── pyproject.toml   # Python project configuration
-└── pdm.lock         # Python dependency lock file
+├── tsa/             # Core Python application code
+│   ├── chat/        # Chat bot implementation
+│   └── catalog/     # Catalog related code
+│   └── styleguide/  # Styleguide related code
+
+│   └── run.py       # Development and production server runner
+│   └── pyproject.toml   # Python project configuration
+│   └── pdm.lock         # Python dependency lock file
 ```
 
 ## Features

@@ -1,9 +1,10 @@
 [project]
-name = "llama-agent"
+name = "tsa"
 version = "0.1.0"
-description = "Llama Agent with FastAPI backend and NextJS frontend"
+description = "TSUM Shopping Assistant"
 authors = [
     {name = "nerifuture", email = "notintricate@users.noreply.github.com"},
+    {name = "sk", email = "sk@vrtech.global"},
 ]
 dependencies = [
     "fastapi>=0.109.1",
@@ -22,7 +23,7 @@ dependencies = [
 ]
 requires-python = "==3.12.*"
 readme = "README.md"
-license = {text = "MIT"}
+
 
 [tool.pdm.scripts]
 dev = "python run.py dev"
