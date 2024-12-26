@@ -16,7 +16,7 @@ GenAI Shopping assistant for TSUM.
 - FastAPI
 - Python 3.12
 - Uvicorn ASGI server
-- PDM for dependency management
+- PDM with uv for dependency management
 - Llama Index
 
 ## Prerequisites
