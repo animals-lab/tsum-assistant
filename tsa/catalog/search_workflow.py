@@ -14,8 +14,9 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 
 from .query import query_catalog
-from .models import Offer, ShortOffer, GenderType, StructuredQuery
+from .models import Offer, StructuredQuery
 from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.settings import Settings
 
 # TODO isolate own events!
 from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
@@ -161,7 +162,6 @@ class SearchWorkflow(Workflow):
 if __name__ == "__main__":
     # Example usage
     async def main():
-        Settings.llm = OpenAI(model="gpt-4o-mini")
         workflow = SearchWorkflow(timeout=20, verbose=True)
         result = await workflow.run(input_query="Белые кеды, мужские", streaming=True)
         print(result)

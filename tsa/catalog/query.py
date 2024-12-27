@@ -8,11 +8,8 @@ from qdrant_client.models import (
     MatchAny,
 )
 from llama_index.core import VectorStoreIndex
-from . import settings
-from .models import GenderType, Offer, StructuredQuery
-from asyncio import Queue
-
-product_queue: Queue[Offer] = Queue()
+from tsa.config import settings
+from tsa.catalog.models import GenderType, Offer, StructuredQuery
 
 
 async def query_catalog(
@@ -30,10 +27,7 @@ async def query_catalog(
     must_conditions = [FieldCondition(key="available", match=MatchValue(value=True))]
 
     # Handle price range
-    if (
-        structured_query.min_price is not None
-        or structured_query.max_price is not None
-    ):
+    if structured_query.min_price is not None or structured_query.max_price is not None:
         range_params = {}
         if structured_query.min_price is not None:
             range_params["gte"] = structured_query.min_price
@@ -74,7 +68,9 @@ async def query_catalog(
     # Handle gender filter
     if structured_query.gender:
         must_conditions.append(
-            FieldCondition(key="gender", match=MatchValue(value=structured_query.gender))
+            FieldCondition(
+                key="gender", match=MatchValue(value=structured_query.gender)
+            )
         )
 
     # Create retriever with filters if any exist
@@ -88,7 +84,7 @@ async def query_catalog(
         }
 
     if structured_query.query_text:
-        vector_store = settings.vector_store
+        vector_store = settings.qdrant.vector_store
         index = VectorStoreIndex.from_vector_store(vector_store)
         retriever = index.as_retriever(**retriever_kwargs)
 
@@ -103,8 +99,8 @@ async def query_catalog(
         batch_size = structured_query.offset + structured_query.limit
 
         # For non-query cases, use scroll with calculated batch size
-        results = settings.qdrant_client.scroll(
-            collection_name=settings.QDRANT_COLLECTION,
+        results = settings.qdrant.client.scroll(
+            collection_name=settings.qdrant.collection,
             scroll_filter=Filter(must=must_conditions),
             limit=batch_size,  # Use larger batch size to cover offset
             offset=0,  # Start from beginning
@@ -123,9 +119,6 @@ async def query_catalog(
             [1.0] * len(page_results),  # Use default score for non-query results
         )
 
-    for offer in response[0]:
-        await product_queue.put(offer)
-
     return response
 
 
@@ -137,8 +130,11 @@ if __name__ == "__main__":
     start_time = time.time()
     results = asyncio.run(
         query_catalog(
-            category=["Спорт", "Джоггеры"],
-            limit=100,
+            StructuredQuery(
+                category=["Спорт", "Джоггеры"],
+                gender="Мужской",
+                limit=100,
+            )
         )
     )
     execution_time = time.time() - start_time

@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
 
-from tsa.api.lib.vercel import VercelStreamResponse
+from tsa.api.lib.protocol import VercelStreamResponse
 from tsa.chat.chat_workflow import MainWorkflow
 
 logger = logging.getLogger(__name__)

@@ -1,10 +1,11 @@
-from typing import Dict, Optional, TypeVar, Callable, Any, Literal, List
-from pydantic import BaseModel, Field
+import hashlib
+import json
+from functools import cache
+from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar
 from uuid import UUID
 from xml.etree import ElementTree as ET
-import hashlib, json
-from functools import cache
 
+from pydantic import BaseModel, Field
 
 GenderType = Literal["Мужской", "Женский", "Детский"]
 T = TypeVar("T")
@@ -170,38 +171,14 @@ class Offer(BaseModel):
         return Offer(**basic_data)
 
 
-class ShortOffer(BaseModel):
-    """Pydantic model representing a product offer from the catalog"""
-
-    id: int
-    vendor: str
-    description: str
-    url: str
-    image_url: str
-
-    @classmethod
-    def from_offer(cls, offer: Offer) -> "ShortOffer":
-        return cls(
-            id=offer.id,
-            vendor=offer.vendor,
-            description=offer.description,
-            url=offer.url,
-            image_url=offer.picture,
-        )
-
-
-
-
-
 class CatalogQueryResponse(BaseModel):
     items: List[Offer]
     scores: List[float]
 
 
-from pydantic import BaseModel, Field
-from typing import Optional, List, Literal
+from typing import List, Literal, Optional
 
-GenderType = Literal["Мужской", "Женский", "Детский"]
+from pydantic import BaseModel, Field
 
 
 class StructuredQuery(BaseModel):
@@ -234,6 +211,3 @@ class StructuredQuery(BaseModel):
     complete: bool = Field(
         False, description="Must be set to true by agent when it creates a query!"
     )
-
-
-

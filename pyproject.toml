@@ -21,6 +21,7 @@ dependencies = [
     "llama-index-program-openai>=0.3.1",
     "llama-index-utils-workflow>=0.3.0",
     "loguru>=0.7.3",
+    "pydantic-settings>=2.7.0",
 ]
 requires-python = "==3.12.*"
 readme = "README.md"

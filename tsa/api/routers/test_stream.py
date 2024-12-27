@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from typing import AsyncGenerator
-from tsa.api.lib.vercel import VercelStreamResponse
+from tsa.api.lib.protocol import VercelStreamResponse
 import asyncio
 import json
 

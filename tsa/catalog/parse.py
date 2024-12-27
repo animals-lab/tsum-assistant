@@ -1,16 +1,18 @@
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Generator, Dict
-from xml.etree import ElementTree as ET
 import json
+from datetime import datetime, timedelta
+from functools import cache
+from pathlib import Path
+from typing import Dict, Generator
+from xml.etree import ElementTree as ET
 
 import qdrant_client
 import requests
-import src.catalog.settings as settings
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import TextNode
-from src.catalog.models import Offer
-from functools import cache
+from loguru import logger
+
+from tsa.catalog.models import Offer
+from tsa.config import settings
 
 # Field mappings
 PARAM_FIELD_MAPPING = {
@@ -46,11 +48,13 @@ def parse_categories(file_path: Path) -> Dict[int, dict]:
             categories[int(category_id)] = {
                 "name": category.text,
                 "url": category.get("url"),
-                "parent_id": int(category.get("parentId")) if category.get("parentId") else None,
+                "parent_id": (
+                    int(category.get("parentId")) if category.get("parentId") else None
+                ),
             }
 
     # Save categories to JSON file
-    output_path = settings.DATA_FOLDER / "categories.json"
+    output_path = settings.catalog.data_folder / "categories.json"
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(categories, f, ensure_ascii=False, indent=2)
 
@@ -96,20 +100,22 @@ def download_data_file() -> Path:
     Raises:
         Exception: If download fails
     """
-    settings.DATA_FOLDER.mkdir(exist_ok=True)
+    settings.catalog.data_folder.mkdir(exist_ok=True)
 
     try:
-        with requests.get(settings.DATA_URL, stream=True) as response:
+        with requests.get(settings.catalog.data_url, stream=True) as response:
             response.raise_for_status()
 
-            with open(settings.CATALOG_FILE, "wb") as f:
+            with open(settings.catalog.catalog_file_path, "wb") as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
 
-        return settings.CATALOG_FILE
+        return settings.catalog.catalog_file_path
 
     except requests.RequestException as e:
-        raise Exception(f"Failed to download file from {settings.DATA_URL}: {str(e)}")
+        raise Exception(
+            f"Failed to download file from {settings.catalog.data_url}: {str(e)}"
+        )
 
 
 def is_file_fresh(file_path: Path, max_age: timedelta) -> bool:
@@ -166,10 +172,10 @@ def load_to_qdrant(
     """
 
     # Initialize Qdrant client
-    client = settings.qdrant_client
+    client = settings.qdrant.client
 
     # Create the vector store and index
-    vector_store = settings.vector_store
+    vector_store = settings.qdrant.vector_store
 
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
     nodes_stream = stream_text_nodes_from_offers(parse_catalog(file_path))
@@ -181,11 +187,11 @@ def load_to_qdrant(
     total_updated = 0
     total_skipped = 0
 
-    if settings.ITEMS_TO_PROCESS:
+    if settings.catalog.parse_limit:
         import itertools
 
-        print(f"Limiting to {settings.ITEMS_TO_PROCESS} items")
-        nodes_stream = itertools.islice(nodes_stream, settings.ITEMS_TO_PROCESS)
+        logger.warning(f"Limiting to {settings.catalog.parse_limit} items")
+        nodes_stream = itertools.islice(nodes_stream, settings.catalog.parse_limit)
 
     while True:
         node = next(
@@ -195,7 +201,7 @@ def load_to_qdrant(
             total_processed += 1
             check_batch.append(node)
 
-        if len(check_batch) >= settings.CHECK_BATCH_SIZE or not node:
+        if len(check_batch) >= settings.catalog.check_size or not node:
             try:
                 existing_points = client.retrieve(
                     collection_name=collection_name,
@@ -210,7 +216,7 @@ def load_to_qdrant(
                 ):
                     raise e
 
-                print("Collection not found, creating")
+                logger.info("Collection not found, creating")
                 existing_hashes = []
 
             for n in check_batch:
@@ -219,20 +225,20 @@ def load_to_qdrant(
                 else:
                     total_skipped += 1
 
-            print(
+            logger.info(
                 f"Batch checked, processed {len(check_batch)} items, total skipped {total_skipped}"
             )
             check_batch = []
 
         if len(batch) > 0 and (len(batch) >= batch_size or not node):
-            index = VectorStoreIndex(
+            _ = VectorStoreIndex(
                 batch,
                 storage_context=storage_context,
                 insert_mode="upsert",
             )
             total_updated += len(batch)
 
-            print(
+            logger.info(
                 f"Batch finished, processed {len(batch)} items, total updated {total_updated}, total skipped {total_skipped}"
             )
             batch = []
@@ -247,19 +253,18 @@ def load_to_qdrant(
 
 
 def create_qdrant_indexes():
-    client = settings.qdrant_client
-
-    # client.create_collection(settings.QDRANT_COLLECTION, vectors_config=Settings.embed_model)
+    client = settings.qdrant.client
+    collection = settings.qdrant.collection
 
     client.create_payload_index(
-        collection_name=settings.QDRANT_COLLECTION,
+        collection_name=collection,
         field_name="available",
         field_schema=qdrant_client.models.PayloadSchemaType.BOOL,
     )
 
     for field_name in ["price", "vendor", "color"]:
         client.create_payload_index(
-            collection_name=settings.QDRANT_COLLECTION,
+            collection_name=collection,
             field_name=field_name,
             field_schema=qdrant_client.models.PayloadSchemaType.INTEGER,
         )
@@ -267,7 +272,7 @@ def create_qdrant_indexes():
     for field_name in ["category", "material"]:
 
         client.create_payload_index(
-            collection_name=settings.QDRANT_COLLECTION,
+            collection_name=collection,
             field_name=field_name,
             field_schema=qdrant_client.models.TextIndexParams(
                 type="text",
@@ -282,13 +287,9 @@ def create_qdrant_indexes():
 
 
 if __name__ == "__main__":
-    from dotenv import load_dotenv
-
-    load_dotenv()
-
     # Check if we need to download fresh data
-    if "sample" not in settings.CATALOG_FILE.name:
-        if not is_file_fresh(settings.CATALOG_FILE, timedelta(hours=1)):
+    if "sample" not in settings.catalog.catalog_file_path.name:
+        if not is_file_fresh(settings.catalog.catalog_file_path, timedelta(hours=1)):
             print("Downloading fresh catalog file")
             download_data_file()
         else:
@@ -297,12 +298,12 @@ if __name__ == "__main__":
         print("Using sample file")
 
     # Parse categories first
-   
+
     # Load offers to Qdrant
     load_to_qdrant(
-        file_path=settings.CATALOG_FILE,
-        collection_name=settings.QDRANT_COLLECTION,
-        batch_size=settings.BATCH_SIZE,
+        file_path=settings.catalog.catalog_file_path,
+        collection_name=settings.qdrant.collection,
+        batch_size=settings.catalog.parse_batch,
     )
 
     print("Successfully loaded offers to Qdrant index")
