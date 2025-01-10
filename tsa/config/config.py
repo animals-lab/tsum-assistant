@@ -1,20 +1,27 @@
 from pathlib import Path
-from typing import Optional
-from loguru import logger
-from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
+from typing import Optional, Callable
 
+from dotenv import load_dotenv
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from pydantic import Field, computed_field, BaseModel
+from loguru import logger
+from pydantic import BaseModel, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from qdrant_client import QdrantClient
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 
 class TsaSettings(BaseSettings):
     """Settings for TSA."""
 
-    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore", env_file=".env")
+    model_config = SettingsConfigDict(
+        case_sensitive=False, extra="ignore", env_file=".env"
+    )
 
 
 class CatalogSettings(TsaSettings):
@@ -85,6 +92,7 @@ class QdrantSettings(TsaSettings):
             collection_name=self.collection,
         )
 
+
 class LLMSettings(TsaSettings):
     """Settings for LLM and embeddings."""
 
@@ -131,7 +139,7 @@ class DatabaseSettings(TsaSettings):
         return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
     @computed_field
-    def engine(self):
+    def engine(self) -> AsyncEngine:
         """Initialize and get async database engine."""
         return create_async_engine(
             self.url,
@@ -141,7 +149,7 @@ class DatabaseSettings(TsaSettings):
         )
 
     @computed_field
-    def async_session_maker(self):
+    def async_session_maker(self) -> Callable[[], AsyncSession]:
         """Get async session maker."""
         return async_sessionmaker(
             self.engine,
