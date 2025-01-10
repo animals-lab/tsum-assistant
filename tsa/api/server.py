@@ -1,8 +1,10 @@
 import logging
 
 import llama_index.core
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from tsa.models.customer import Customer
+from tsa.api.lib.db import get_current_customer
 
 from tsa.api.routers import catalog, chat
 from llama_index.llms.openai import OpenAI
@@ -36,10 +38,11 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 
@@ -48,9 +51,17 @@ async def health_check():
     return {"status": "ok"}
 
 
-# Add the routers
-app.include_router(catalog.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
+# Add the routers with dependencies
+app.include_router(
+    catalog.router,
+    prefix="/api",
+    dependencies=[Depends(get_current_customer)]
+)
+app.include_router(
+    chat.router,
+    prefix="/api",
+    dependencies=[Depends(get_current_customer)]
+)
 
 from .routers.test_stream import test_stream
 app.post("/api/test-stream")(test_stream)

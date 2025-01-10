@@ -3,7 +3,7 @@ import { Product } from '@/types/feed'
 
 const CARD_WIDTH = 272
 const CARD_GAP = 16
-const API_URL = 'http://127.0.0.1:8000'
+// const API_URL = 'http://localhost:3000'
 const PAGE_SIZE = 20
 
 export function useFeed() {
@@ -39,7 +39,7 @@ export function useFeed() {
         query_text: ''
       })
 
-      const url = `${API_URL}/api/catalog?${params}`
+      const url = `/api/catalog?${params}`
       const response = await fetch(url)
 
       if (!response.ok) {

@@ -24,16 +24,16 @@ class Customer(SQLModel, table=True):
         default="", description="Short description of wear style preferences"
     )
     brand_preferences: List["CustomerBrandPreference"] = Relationship(
-        back_populates="customer"
+        back_populates="customer", sa_relationship_kwargs={"lazy": "selectin"}
     )
 
-    # @property
-    # def liked_brand_names(self) -> List[str]:
-    #     return [pref.brand_name for pref in self.brand_preferences if pref.preference == "like"]
+    @property
+    def liked_brand_names(self) -> List[str]:
+        return [pref.brand_name for pref in self.brand_preferences if pref.preference == "like"]
 
-    # @property
-    # def disliked_brand_names(self) -> List[str]:
-    #     return [pref.brand_name for pref in self.brand_preferences if pref.preference == "dislike"]
+    @property
+    def disliked_brand_names(self) -> List[str]:
+        return [pref.brand_name for pref in self.brand_preferences if pref.preference == "dislike"]
 
 
 class PreferenceType(str, Enum):

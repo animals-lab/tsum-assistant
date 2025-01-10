@@ -1,14 +1,16 @@
 import json
 import logging
 import traceback
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Depends, Cookie
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from tsa.catalog.models import GenderType, StructuredQuery, CatalogQueryResponse
-from tsa.catalog.query import  query_catalog
+from tsa.catalog.query import query_catalog
+from tsa.models.customer import Customer, CustomerGender
+from tsa.api.lib.db import get_current_customer
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -34,6 +36,7 @@ async def get_catalog(
         default=10, ge=1, le=100, description="Number of results to return"
     ),
     offset: int = Query(default=0, ge=0, description="Number of results to skip"),
+    customer: Customer | None = Depends(get_current_customer),
 ):
     """
     sample query:
@@ -42,9 +45,17 @@ async def get_catalog(
     http://localhost:8000/api/catalog?vendor=Gucci&vendor=Prada&material=Кашемир&material=Шерсть&offset=20&limit=20
     http://localhost:8000/api/catalog?query_text=кожаная%20сумка&color=Чёрный&min_price=50000&max_price=200000&vendor=Prada
     """
+    if customer and not vendor:
+        vendor = customer.liked_brand_names
+    if customer and not gender:
+        gender = {
+            CustomerGender.MALE: "Мужской",
+            CustomerGender.FEMALE: "Женский",
+        }.get(customer.gender, None)
+
     try:
         logger.info(f"Querying catalog with parameters: {locals()}")
-        
+
         # Create StructuredQuery instance from parameters
         query = StructuredQuery(
             query_text=query_text or None,  # Convert empty string to None
@@ -58,10 +69,8 @@ async def get_catalog(
             limit=limit,
             offset=offset,
         )
-        
-        items, scores = await query_catalog(
-            query
-        )
+
+        items, scores = await query_catalog(query)
         return CatalogQueryResponse(items=items, scores=scores)
     except Exception as e:
         logger.error(f"Error in catalog query: {str(e)}")

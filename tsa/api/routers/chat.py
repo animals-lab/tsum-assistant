@@ -1,20 +1,22 @@
 import logging
 import traceback
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import ChatMemoryBuffer
 
 from tsa.api.lib.protocol import VercelStreamResponse
 from tsa.chat.chat_workflow import MainWorkflow
+from tsa.models.customer import Customer
+from tsa.api.lib.db import get_current_customer
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
 @router.post("/chat")
-async def chat_endpoint(request: Request):
+async def chat_endpoint(request: Request, customer: Customer | None = Depends(get_current_customer)):
     try:
         logger.info("Received request to /chat")
         body = await request.json()
@@ -83,3 +85,14 @@ async def chat_endpoint(request: Request):
 #         logger.error(f"Error in chat endpoint: {str(e)}")
 #         logger.error(traceback.format_exc())
 #         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@router.get("/chat/customer-info")
+async def get_customer_info(customer: Customer | None = Depends(get_current_customer)):
+    if not customer:
+        return {"message": "No customer logged in"}
+    return {
+        "customer_id": customer.id,
+        "name": customer.name,
+        "style_preferences": customer.style_preferences
+    }
