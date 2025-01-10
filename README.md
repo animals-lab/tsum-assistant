@@ -18,6 +18,9 @@ GenAI Shopping assistant for TSUM.
 - Uvicorn ASGI server
 - PDM with uv for dependency management
 - Llama Index
+- SQLModel (SQLAlchemy 2.0 based ORM)
+- PostgreSQL with asyncpg driver
+- Docker for development database
 
 ## Prerequisites
 
@@ -25,8 +28,42 @@ GenAI Shopping assistant for TSUM.
 - PDM (Python dependency manager)
 - Node.js 18+
 - PNPM (Node.js package manager)
+- Docker and Docker Compose (for local database)
 
 ## Setup & Development
+
+### Database Setup
+
+1. Configure database environment variables in `.env`:
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=devpassword  # Change this in production!
+DB_DATABASE=tsa
+```
+
+2. Start the PostgreSQL container:
+```bash
+docker compose up -d
+```
+
+This will start PostgreSQL with:
+- Port 5432 exposed to host machine
+- Data persisted in a Docker volume
+- Credentials from your .env file
+
+To stop the database:
+```bash
+docker compose down
+```
+
+To remove the database and all data:
+```bash
+docker compose down -v
+```
+
+### Running the Application
 
 Run both frontend and backend development servers:
 
@@ -66,12 +103,6 @@ tsa/
 │   └── catalog/     # Catalog related code
 │   └── styleguide/  # Styleguide related code
 
-│   └── run.py       # Development and production server runner
-│   └── pyproject.toml   # Python project configuration
-│   └── pdm.lock         # Python dependency lock file
-```
-
-## Features
 
 - Modern frontend with Next.js 15 and React 19
 - Type-safe development with TypeScript
@@ -81,6 +112,9 @@ tsa/
 - Modern UI with Tailwind CSS 3.4
 - Efficient package management with PDM and PNPM
 - Hot reloading for both frontend and backend in development
+- SQLModel for type-safe database operations
+- Async PostgreSQL support with SQLAlchemy 2.0
+- Docker-based development database
 
 ## License
 

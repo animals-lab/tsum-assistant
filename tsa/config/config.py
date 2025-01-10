@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 from loguru import logger
 from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.vector_stores.qdrant import QdrantVectorStore
@@ -84,7 +85,6 @@ class QdrantSettings(TsaSettings):
             collection_name=self.collection,
         )
 
-
 class LLMSettings(TsaSettings):
     """Settings for LLM and embeddings."""
 
@@ -111,10 +111,50 @@ class LLMSettings(TsaSettings):
         _settings.llm = OpenAI(model=self.llm_model)
 
 
+class DatabaseSettings(TsaSettings):
+    """Settings for database connection."""
+
+    model_config = SettingsConfigDict(case_sensitive=False, env_prefix="DB_")
+
+    host: str = Field("localhost", description="Database host")
+    port: int = Field(5432, description="Database port")
+    user: str = Field("postgres", description="Database user")
+    password: str = Field(..., description="Database password")
+    database: str = Field("tsa", description="Database name")
+    echo: bool = Field(False, description="Enable SQL query logging")
+    pool_size: int = Field(5, description="Connection pool size")
+    max_overflow: int = Field(10, description="Maximum overflow connections")
+
+    @computed_field
+    def url(self) -> str:
+        """Get the database URL."""
+        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+
+    @computed_field
+    def engine(self):
+        """Initialize and get async database engine."""
+        return create_async_engine(
+            self.url,
+            echo=self.echo,
+            pool_size=self.pool_size,
+            max_overflow=self.max_overflow,
+        )
+
+    @computed_field
+    def async_session_maker(self):
+        """Get async session maker."""
+        return async_sessionmaker(
+            self.engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
+
+
 class Settings(BaseModel):
     catalog: CatalogSettings = Field(default_factory=CatalogSettings)
     qdrant: QdrantSettings = Field(default_factory=QdrantSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+    db: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
 
 # Create a global settings instance
