@@ -157,6 +157,8 @@ class DatabaseSettings(TsaSettings):
             expire_on_commit=False,
         )
 
+# Load environment variables from .env file for libraries that skip setting and use own env variables (like openai)
+load_dotenv()
 
 class Settings(BaseModel):
     catalog: CatalogSettings = Field(default_factory=CatalogSettings)
