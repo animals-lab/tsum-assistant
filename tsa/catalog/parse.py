@@ -79,10 +79,15 @@ def parse_catalog(file_path: Path) -> Generator[Offer, None, None]:
     """
     context = ET.iterparse(file_path, events=("end",))
     categories = parse_categories(file_path)
+    existing_brand_names = set()
+    import asyncio
 
     for event, elem in context:
         if elem.tag == "offer":
             offer = Offer.from_xml_element(elem, categories)
+            if offer.vendor not in existing_brand_names:
+                existing_brand_names = asyncio.run(update_brands(offer.vendor))
+
             yield offer
 
             # Clear element to free memory
@@ -158,27 +163,19 @@ def stream_text_nodes_from_offers(
         yield TextNode(text=text, metadata=metadata, id_=offer.uid)
 
 
-async def extract_brands(offers: None|Generator[Offer, None, None]=None):
-    brand_names = {"Stone Island"}
-    if offers:
-        for offer in offers:
-            brand_names.add(offer.vendor)
-
+async def update_brands(brand_name: str):
     async with settings.db.async_session_maker() as session:
         # Get existing brand names from database
         result = (await session.scalars(select(Brand.name))).all()
         existing_brand_names = set(result)
-        logger.info(f"Existing brand names: {existing_brand_names}")
-        
 
-        brand_names = brand_names - existing_brand_names
-        for name in brand_names:
-            session.add(Brand(name=name))
-            logger.info(f"Adding brand {name}")
+        if brand_name not in existing_brand_names:
+            session.add(Brand(name=brand_name))
+            logger.info(f"Adding brand {brand_name}")
 
-        await session.commit()
+            await session.commit()
 
-    return brand_names
+    return existing_brand_names | {brand_name}
 
 
 def load_to_qdrant(
@@ -325,15 +322,12 @@ if __name__ == "__main__":
         print("Using sample file")
 
     # Parse brands first
-    import asyncio
-    asyncio.run(extract_brands(parse_catalog(settings.catalog.catalog_file_path)))
-    
 
     # # Load offers to Qdrant
-    # load_to_qdrant(
-    #     file_path=settings.catalog.catalog_file_path,
-    #     collection_name=settings.qdrant.collection,
-    #     batch_size=settings.catalog.parse_batch,
-    # )
+    load_to_qdrant(
+        file_path=settings.catalog.catalog_file_path,
+        collection_name=settings.qdrant.collection,
+        batch_size=settings.catalog.parse_batch,
+    )
 
     # print("Successfully loaded offers to Qdrant index")
