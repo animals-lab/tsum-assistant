@@ -8,6 +8,11 @@ import { useEffect } from 'react';
 import type { Product } from "@/types/feed";
 import { cn } from "@/lib/utils";
 
+interface ChatMessage {
+  offers?: Product[];
+  [key: string]: any;
+}
+
 interface ChatProps {
   onNewProducts?: (products: Product[]) => void;
   className?: string;
@@ -19,18 +24,19 @@ export default function Chat({
   className,
   variant = 'standalone' 
 }: ChatProps) {
-  const handler = useChat();
+  const handler = useChat<ChatMessage>();
 
   useEffect(() => {
     if (!onNewProducts) return;
     
-    console.log('Chat handler data:', handler.data);
     if (handler.data && Array.isArray(handler.data) && handler.data.length > 0) {
-      const firstItem = handler.data.shift();
-      console.log('First item:', firstItem);
-      if (firstItem && typeof firstItem === 'object' && 'offers' in firstItem) {
-        console.log('Found offers:', firstItem.offers);
-        onNewProducts(firstItem.offers as Product[]);
+      // Look for the most recent message with offers
+      const messageWithOffers = [...handler.data].reverse().find(item => 
+        item && typeof item === 'object' && 'offers' in item
+      );
+      
+      if (messageWithOffers?.offers && Array.isArray(messageWithOffers.offers)) {
+        onNewProducts(messageWithOffers.offers);
       }
     }
   }, [handler.data, onNewProducts]);

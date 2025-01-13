@@ -6,13 +6,22 @@ const CARD_GAP = 16
 // const API_URL = 'http://localhost:3000'
 const PAGE_SIZE = 20
 
-export function useFeed() {
+export function useFeed(chatProducts: Product[] = []) {
   const [products, setProducts] = useState<Product[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [totalItems, setTotalItems] = useState(0)
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const isInitialLoad = useRef(true)
+
+  // Update products when chatProducts change
+  useEffect(() => {
+    setProducts(prev => {
+      // Combine chat products with existing feed products
+      const feedProducts = prev.filter(p => !chatProducts.find(cp => cp.id === p.id));
+      return [...chatProducts, ...feedProducts];
+    });
+  }, [chatProducts]);
 
   // Calculate how many items we need to fill the viewport
   const calculateInitialItems = () => {
