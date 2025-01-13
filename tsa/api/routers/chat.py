@@ -33,7 +33,7 @@ async def chat_endpoint(request: Request, customer: Customer | None = Depends(ge
                 ChatMessage(role=m["role"], content=m["content"]) for m in messages[:-1]
             ]
         )
-        agent = MainWorkflow(timeout=60, verbose=True, chat_memory=memory)
+        agent = MainWorkflow(timeout=60, verbose=True, chat_memory=memory, customer=customer)
 
         event_handler = agent.run(
             user_msg=user_message,

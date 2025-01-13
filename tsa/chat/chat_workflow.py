@@ -20,6 +20,7 @@ from tsa.catalog.models import StructuredQuery
 from tsa.catalog.search_workflow import SearchWorkflow
 from tsa.styleguide.trend_perplexity import fetch_fashion_trends
 from tsa.chat.chat_events import AgentRunEvent, OfferFilteredEvent, ProgressEvent
+from tsa.models.customer import Customer
 
 
 class ProcessInputResult(BaseModel):
@@ -30,7 +31,7 @@ class ProcessInputResult(BaseModel):
 
     right_away_answer: Optional[str] = Field(
         default=None,
-        description="Answer to the user request right away, if nothing else needed",
+        description="Answer to the user request right away, if nothing else needed. If you want to execute catalog search or fashion trends search, do not include this field.",
     )
     catalog_search_required: bool = Field(
         description="Whether catalog search is required"
@@ -49,11 +50,19 @@ class ProcessInputResult(BaseModel):
 class MainWorkflow(Workflow):
     _streaming = False
     _start_time: datetime.datetime | None = None
+    customer: Customer | None = None
 
-    def __init__(self, chat_memory: ChatMemoryBuffer, *args: Any, **kwargs: Any):
+    def __init__(
+        self,
+        chat_memory: ChatMemoryBuffer,
+        customer: Customer | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ):
         super().__init__(*args, **kwargs)
         self.llm = OpenAI(model="gpt-4o-mini")
         self.chat_memory = chat_memory
+        self.customer = customer
 
     @step
     async def init(self, ctx: Context, ev: StartEvent) -> ProcessInputRequestEvent:
@@ -88,6 +97,9 @@ class MainWorkflow(Workflow):
         ctx.write_event_to_stream(
             ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос...")
         )
+        if self.customer and self.customer.prompt:
+            prompt += f"\n\n{self.customer.prompt}"
+
         history = self.chat_memory.get_all()
         if history:
             history_str = "\n".join([f"{msg.role}: {msg.content}" for msg in history])

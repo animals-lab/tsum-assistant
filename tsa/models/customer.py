@@ -29,11 +29,50 @@ class Customer(SQLModel, table=True):
 
     @property
     def liked_brand_names(self) -> List[str]:
-        return [pref.brand_name for pref in self.brand_preferences if pref.preference == "like"]
+        return [
+            pref.brand_name
+            for pref in self.brand_preferences
+            if pref.preference == "like"
+        ]
 
     @property
     def disliked_brand_names(self) -> List[str]:
-        return [pref.brand_name for pref in self.brand_preferences if pref.preference == "dislike"]
+        return [
+            pref.brand_name
+            for pref in self.brand_preferences
+            if pref.preference == "dislike"
+        ]
+
+    @property
+    def gender_literal(self) -> str | None:
+        # @TODO: remove this and unify catalog and chat
+        return {
+            CustomerGender.MALE: "Мужской",
+            CustomerGender.FEMALE: "Женский",
+        }.get(self.gender, None)
+
+    @property
+    def prompt(self) -> str:
+        # @TODO: organize prompts in a separate file
+        parts = []
+        if self.name:
+            parts.append(f"Name: {self.name}")
+        if self.gender:
+            parts.append(f"Gender, include it in queryies if not explicitly asked for another gender: {self.gender}")
+        if self.liked_brand_names:
+            parts.append(f"Liked brands: {'; '.join(self.liked_brand_names)}")
+        if self.disliked_brand_names:
+            parts.append(
+                f"Disliked brands, use only if explicitly asked: {self.disliked_brand_names}"
+            )
+        if self.style_preferences:
+            parts.append(f"Style preferences: {self.style_preferences}")
+        if self.description:
+            parts.append(f"Description: {self.description}")
+
+        if parts:
+            parts.insert(0, "Customer profile:")
+        return "\n".join(parts)
 
 
 class PreferenceType(str, Enum):

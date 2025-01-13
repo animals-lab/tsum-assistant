@@ -48,10 +48,7 @@ async def get_catalog(
     if customer and not vendor:
         vendor = customer.liked_brand_names
     if customer and not gender:
-        gender = {
-            CustomerGender.MALE: "Мужской",
-            CustomerGender.FEMALE: "Женский",
-        }.get(customer.gender, None)
+        gender = customer.gender_literal
 
     try:
         logger.info(f"Querying catalog with parameters: {locals()}")
