@@ -182,7 +182,6 @@ async def update_brands(brand_name: str):
 def load_to_qdrant(
     file_path: Path,
     collection_name: str,
-    batch_size: int = 100,
 ) -> None:
     """
     Stream load offers into Qdrant index using batching. Only updates items that have changed.
@@ -191,7 +190,6 @@ def load_to_qdrant(
     Args:
         file_path: Path to the catalog XML file
         collection_name: Name for the collection in Qdrant
-        batch_size: Number of documents to process in each batch
 
     Returns:
         VectorStoreIndex: The created index
@@ -258,7 +256,7 @@ def load_to_qdrant(
             )
             check_batch = []
 
-        if len(batch) > 0 and (len(batch) >= batch_size or not node):
+        if len(batch) > 0 and (len(batch) >= settings.catalog.parse_batch or not node):
             _ = VectorStoreIndex(
                 batch,
                 storage_context=storage_context,
@@ -278,7 +276,7 @@ def load_to_qdrant(
 
     # Get all IDs from Qdrant with pagination
     offset = None
-    page_size = 5
+    page_size = settings.catalog.check_size
     unavailable_points = []
 
     while True:
@@ -297,15 +295,18 @@ def load_to_qdrant(
                 point.payload["available"] = False
                 point.payload["hash"] = None # reset hash to force update
                 unavailable_points.append(point)
+            
+            logger.info(f"Processed {len(points)} points, found {len(unavailable_points)} unavailable")
 
         if offset is None:
             break
+
     logger.info(f"Found {len(unavailable_points)} unavailable offers")
     # Update any remaining unavailable points
     if unavailable_points:
 
-        for i in range(0, len(unavailable_points), batch_size):
-            batch = unavailable_points[i : i + batch_size]
+        for i in range(0, len(unavailable_points), settings.catalog.parse_batch):
+            batch = unavailable_points[i : i + settings.catalog.parse_batch]
             client.upsert(
                 collection_name=collection_name,
                 points=[
@@ -371,7 +372,6 @@ if __name__ == "__main__":
     load_to_qdrant(
         file_path=settings.catalog.catalog_file_path,
         collection_name=settings.qdrant.collection,
-        batch_size=settings.catalog.parse_batch,
     )
 
     # print("Successfully loaded offers to Qdrant index")
