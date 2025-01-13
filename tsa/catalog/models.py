@@ -186,16 +186,12 @@ from pydantic import BaseModel, Field
 
 
 class StructuredQuery(BaseModel):
-    query_text: Optional[str] = Field(
-        None,
-        description='Free-form text query (e.g., "элегантное платье", "черные туфли", "модный свитер").',
-    )
-    vendor: Optional[List[str]] = Field(
+    brand: Optional[List[str]] = Field(
         None, description='List of brand names (e.g., "Gucci", "Dsquared2").'
     )
     category: Optional[List[str]] = Field(
         None,
-        description='List of product categories in Russian, plural (e.g., "Платья", "Вечерние платья", "Блузки").',
+        description='List of product categories in Russian, plural (e.g., "Платья", "Вечерние платья", "Блузки", "Кеды").',
     )
     color: Optional[List[str]] = Field(
         None, description='List of colors (e.g., "Чёрный", "Белый", "Красный").'
@@ -208,6 +204,11 @@ class StructuredQuery(BaseModel):
     material: Optional[List[str]] = Field(
         None, description='List of materials (e.g., "Хлопок", "Шерсть", "Кашемир").'
     )
+    query_text: Optional[str] = Field(
+        None,
+        description='Free-form text query (e.g., "элегантное платье", "черные туфли", "модный свитер", "большой вырез"). Include only details not mentioned in other fields.',
+    )
+
     limit: int = Field(20, description="Number of results to return (default is 10).")
     offset: int = Field(
         0, description="Number of results to skip for pagination (default is 0)."

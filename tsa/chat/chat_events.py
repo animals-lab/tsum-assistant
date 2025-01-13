@@ -10,7 +10,7 @@ class ProcessInputResultEvent(Event): ...
 
 
 class CatalogResponseEvent(Event):
-    catalog_summary: str
+    catalog_summary: str | None
 
 
 class CatalogRequestEvent(Event):
@@ -23,7 +23,6 @@ class FashionTrendsRequestEvent(Event):
 
 class FashionTrendsResponseEvent(Event):
     response: str
-
 
 
 ##################
@@ -91,4 +90,3 @@ class OfferFilteredEvent(Event):
 
         cards = [template.format(offer=offer) for offer in self.offers]
         return "\n\n\n".join(cards)
-

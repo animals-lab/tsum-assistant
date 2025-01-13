@@ -19,7 +19,7 @@ router = APIRouter()
 @router.get("/catalog", response_model=CatalogQueryResponse)
 async def get_catalog(
     query_text: str = Query(default="", description="Free-form text query"),
-    vendor: Optional[List[str]] = Query(
+    brand: Optional[List[str]] = Query(
         default=None, description="List of brand names"
     ),
     category: Optional[List[str]] = Query(
@@ -45,8 +45,8 @@ async def get_catalog(
     http://localhost:8000/api/catalog?vendor=Gucci&vendor=Prada&material=Кашемир&material=Шерсть&offset=20&limit=20
     http://localhost:8000/api/catalog?query_text=кожаная%20сумка&color=Чёрный&min_price=50000&max_price=200000&vendor=Prada
     """
-    if customer and not vendor:
-        vendor = customer.liked_brand_names
+    if customer and not brand:
+        brand = customer.liked_brand_names
     if customer and not gender:
         gender = customer.gender_literal
 
@@ -56,7 +56,7 @@ async def get_catalog(
         # Create StructuredQuery instance from parameters
         query = StructuredQuery(
             query_text=query_text or None,  # Convert empty string to None
-            vendor=vendor,
+            brand=brand,
             category=category,
             color=color,
             gender=gender,

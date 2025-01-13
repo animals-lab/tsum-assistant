@@ -5,22 +5,24 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step
 from llama_index.llms.openai import OpenAI
+from loguru import logger
 from pydantic import BaseModel, Field
 
+from tsa.catalog.models import StructuredQuery
+from tsa.catalog.search_workflow import SearchWorkflow
 from tsa.chat.chat_events import (
+    AgentRunEvent,
     CatalogRequestEvent,
     CatalogResponseEvent,
     FashionTrendsRequestEvent,
     FashionTrendsResponseEvent,
+    OfferFilteredEvent,
     ProcessInputRequestEvent,
     ProcessInputResultEvent,
+    ProgressEvent,
 )
-from tsa.catalog.models import StructuredQuery
-
-from tsa.catalog.search_workflow import SearchWorkflow
-from tsa.styleguide.trend_perplexity import fetch_fashion_trends
-from tsa.chat.chat_events import AgentRunEvent, OfferFilteredEvent, ProgressEvent
 from tsa.models.customer import Customer
+from tsa.styleguide.trend_perplexity import fetch_fashion_trends
 
 
 class ProcessInputResult(BaseModel):
@@ -154,24 +156,29 @@ class MainWorkflow(Workflow):
         workflow = SearchWorkflow(timeout=30, verbose=True)
         task = workflow.run(structured_query=ev.structured_query, stream=True)
 
-        async for ev in workflow.stream_events():
-            # if isinstance(ev, OfferStreamEvent):
-            ctx.write_event_to_stream(ev)
-
         ctx.write_event_to_stream(
             ev=AgentRunEvent(
                 name="query_catalog_tool", msg="Отбираем лучшие предложения."
             )
         )
 
-        result = (await task).get("validated_offers", [])
-        ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=result))
+        async for ev in workflow.stream_events():
+            # if isinstance(ev, OfferStreamEvent):
+            ctx.write_event_to_stream(ev)
 
-        summary = "\n\n".join([offer.description for offer in result])
-        print(f"Catalog summary: {summary}")
+        result = (await task).get("validated_offers", [])
+        summary = None
+
+        # found some offers
+        if result:
+            ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=result))
+            summary = "\n\n".join([offer.description for offer in result])
+            logger.info(f"Catalog summary: {summary}")
+
         ctx.write_event_to_stream(
             ev=AgentRunEvent(name="query_catalog_tool", msg="Завершаем поиск.")
         )
+
         return CatalogResponseEvent(catalog_summary=summary)
 
     @step
@@ -219,9 +226,15 @@ class MainWorkflow(Workflow):
 
         for ev in res:
             if isinstance(ev, CatalogResponseEvent):
-                context_parts.append(
-                    f"We have executed catalog search and found the following offers: {ev.catalog_summary}, please offer client a short summary."
-                )
+                if ev.catalog_summary:
+                    context_parts.append(
+                        f"We have executed catalog search and found the following offers: {ev.catalog_summary}, please offer client a short summary."
+                    )
+                else:
+                    context_parts.append(
+                        f"We have executed catalog search and found no offers. Please apologize to user and offer to try again with less specific request."
+                    )
+
             if isinstance(ev, FashionTrendsResponseEvent):
                 context_parts.append(
                     f"We have executed fashion trends search and found the following information: {ev.response}."

@@ -37,7 +37,7 @@ async def query_catalog(
 
     # Handle list filters
     for field, values in [
-        ("vendor", structured_query.vendor),
+        ("vendor", structured_query.brand),
         ("color", structured_query.color),
         ("material", structured_query.material),
     ]:
