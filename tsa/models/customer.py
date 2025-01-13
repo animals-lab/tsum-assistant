@@ -58,9 +58,9 @@ class Customer(SQLModel, table=True):
         if self.name:
             parts.append(f"Name: {self.name}")
         if self.gender:
-            parts.append(f"Gender, include it in queryies if not explicitly asked for another gender: {self.gender}")
+            parts.append(f"Gender, include it in queries if not explicitly asked for another gender: {self.gender}")
         if self.liked_brand_names:
-            parts.append(f"Liked brands: {'; '.join(self.liked_brand_names)}")
+            parts.append(f"Liked brands, you should use them in queries is query itself is too generic (like when user whans cool shirt) but don't use when user asks for some specific details : {'; '.join(self.liked_brand_names)}")
         if self.disliked_brand_names:
             parts.append(
                 f"Disliked brands, use only if explicitly asked: {self.disliked_brand_names}"
