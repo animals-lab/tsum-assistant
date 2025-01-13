@@ -7,6 +7,7 @@ from xml.etree import ElementTree as ET
 from sqlalchemy import select
 
 import qdrant_client
+from qdrant_client.models import PointStruct
 import requests
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import TextNode
@@ -16,7 +17,7 @@ from tsa.catalog.models import Offer
 from tsa.config import settings
 
 from tsa.config import settings
-from tsa.models.catalog import Brand
+from tsa.models import Brand
 
 # Field mappings
 PARAM_FIELD_MAPPING = {
@@ -185,6 +186,7 @@ def load_to_qdrant(
 ) -> None:
     """
     Stream load offers into Qdrant index using batching. Only updates items that have changed.
+    Also marks items not present in current XML as unavailable.
 
     Args:
         file_path: Path to the catalog XML file
@@ -210,6 +212,7 @@ def load_to_qdrant(
     total_processed = 0
     total_updated = 0
     total_skipped = 0
+    current_ids = set()  # Track all IDs in current XML
 
     if settings.catalog.parse_limit:
         import itertools
@@ -224,6 +227,7 @@ def load_to_qdrant(
         if node:
             total_processed += 1
             check_batch.append(node)
+            current_ids.add(node.metadata["uid"])  # Track the ID
 
         if len(check_batch) >= settings.catalog.check_size or not node:
             try:
@@ -269,6 +273,46 @@ def load_to_qdrant(
 
         if not node:
             break
+
+    # After processing all available items, find and update unavailable ones
+
+    # Get all IDs from Qdrant with pagination
+    offset = None
+    page_size = 5
+    unavailable_points = []
+
+    while True:
+        # Get page of points
+        points, offset = client.scroll(
+            collection_name=collection_name,
+            limit=page_size,
+            offset=offset,
+            with_payload=True,
+            with_vectors=True,
+        )
+
+        # Find IDs that are not in current XML
+        for point in points:
+            if point.id not in current_ids and point.payload.get("available", True):
+                point.payload["available"] = False
+                point.payload["hash"] = None # reset hash to force update
+                unavailable_points.append(point)
+
+        if offset is None:
+            break
+    logger.info(f"Found {len(unavailable_points)} unavailable offers")
+    # Update any remaining unavailable points
+    if unavailable_points:
+
+        for i in range(0, len(unavailable_points), batch_size):
+            batch = unavailable_points[i : i + batch_size]
+            client.upsert(
+                collection_name=collection_name,
+                points=[
+                    PointStruct(id=rec.id, payload=rec.payload, vector=rec.vector)
+                    for rec in batch
+                ],
+            )
 
     create_qdrant_indexes()
     print(

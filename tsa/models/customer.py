@@ -1,8 +1,8 @@
-from typing import Optional, Literal, List
+from typing import Optional, Literal, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship
-from tsa.models.catalog import Brand
-
 from enum import Enum
+
+from tsa.models.catalog import Brand
 
 
 class CustomerGender(str, Enum):

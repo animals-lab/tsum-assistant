@@ -21,6 +21,7 @@ from llama_index.core.settings import Settings
 # TODO isolate own events!
 from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
+from loguru import logger
 
 
 class ProcessedQueryEvent(Event):
@@ -98,7 +99,9 @@ class SearchWorkflow(Workflow):
             query.category = None
             offers, scores = await query_catalog(query)
 
-        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers))
+        # reverse order for frontend
+        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+       
         return QueryResultsEvent(
             offers=offers[: self.validation_limit],
             scores=scores[: self.validation_limit],

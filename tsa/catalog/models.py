@@ -164,10 +164,12 @@ class Offer(BaseModel):
             set(categories_from_tree + categories_from_param)
         )
 
+        hash_data =  basic_data#{k: v for k, v in basic_data.items() if k not in ["available"]}
         basic_data["params"] = params
 
+        
         basic_data["hash"] = hashlib.md5(
-            str(json.dumps(basic_data.values(), default=str)).encode()
+            str(json.dumps(hash_data, default=str)).encode()
         ).hexdigest()
 
         return Offer(**basic_data)
