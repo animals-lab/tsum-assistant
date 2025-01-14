@@ -1,5 +1,9 @@
+from enum import Enum
+from typing import List, Optional
+
 from llama_index.core.workflow import Event
-from tsa.catalog.models import StructuredQuery
+
+from tsa.catalog.models import Offer, StructuredQuery
 
 
 class ProcessInputRequestEvent(Event):
@@ -17,6 +21,14 @@ class CatalogRequestEvent(Event):
     structured_query: StructuredQuery
 
 
+class SKURequestEvent(Event):
+    query: str
+
+
+class SKUResponseEvent(Event):
+    offers: List[Offer] | None = None
+    summary: str | None = None
+
 class FashionTrendsRequestEvent(Event):
     query: str
 
@@ -26,11 +38,6 @@ class FashionTrendsResponseEvent(Event):
 
 
 ##################
-from enum import Enum
-from typing import List, Optional
-
-from llama_index.core.workflow import Event
-from tsa.catalog.models import Offer
 
 
 class AgentRunEventType(Enum):

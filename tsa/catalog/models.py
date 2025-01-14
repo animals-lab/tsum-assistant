@@ -1,8 +1,8 @@
 import hashlib
 import json
+from uuid import UUID
 from functools import cache
 from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar
-from uuid import UUID
 from xml.etree import ElementTree as ET
 
 from pydantic import BaseModel, Field
@@ -50,8 +50,10 @@ class Offer(BaseModel):
     """Pydantic model representing a product offer from the catalog"""
 
     # Required fields
-    id: int
-    uid: str
+    id: str  # acutally uuid, but it's a string so we dont mess with json  encoding for now
+    tsum_sku: str  # yes, it's a string, not int
+    vendor_sku: Optional[str] = None
+
     name: str
 
     # Optional basic fields
@@ -61,7 +63,7 @@ class Offer(BaseModel):
     # currency: Optional[str] = None
     # category_id: Optional[int] = None
     vendor: Optional[str] = None
-    # vendor_code: Optional[str] = None
+
     picture: Optional[str] = None
     description: Optional[str] = None
     url: Optional[str] = None
@@ -120,22 +122,23 @@ class Offer(BaseModel):
             "Сезон": "season",
             "Материал": "material",
             "custom categories": "category",
+            "Артикул": "tsum_sku",
+            "Скидка": "discount",
         }
         basic_data = {
-            "id": int(elem.get("id")) if elem.get("id") else None,
+            "vendor_sku": extract_value(elem, "vendorCode"),
             "available": elem.get("available") == "true",
             "price": extract_value(elem, "price", lambda x: int(float(x))),
-            # "old_price": extract_value(elem, "oldprice", lambda x: int(float(x))),
+            "old_price": extract_value(elem, "oldprice", lambda x: int(float(x))),
             # "currency": extract_value(elem, "currencyId"),
             "category_id": extract_value(elem, "categoryId", int),
             "name": extract_value(elem, "name"),
             "vendor": extract_value(elem, "vendor"),
-            # "vendor_code": extract_value(elem, "vendorCode"),
             "picture": extract_value(elem, "picture"),
             "description": extract_value(elem, "description"),
             "url": extract_value(elem, "url"),
         }
-        basic_data["uid"] = str(UUID(int=basic_data["id"]))
+        basic_data["id"] = str(UUID(int=int(elem.get("id"))))
         # Process parameters
         special_fields = {}
         params = {}
@@ -164,10 +167,9 @@ class Offer(BaseModel):
             set(categories_from_tree + categories_from_param)
         )
 
-        hash_data =  basic_data#{k: v for k, v in basic_data.items() if k not in ["available"]}
+        hash_data = basic_data  # {k: v for k, v in basic_data.items() if k not in ["available"]}
         basic_data["params"] = params
 
-        
         basic_data["hash"] = hashlib.md5(
             str(json.dumps(hash_data, default=str)).encode()
         ).hexdigest()

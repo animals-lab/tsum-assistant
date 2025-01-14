@@ -1,15 +1,17 @@
 from typing import List, Optional
-from qdrant_client.models import (
-    Filter,
-    FieldCondition,
-    Range,
-    MatchValue,
-    MatchText,
-    MatchAny,
-)
+
 from llama_index.core import VectorStoreIndex
-from tsa.config import settings
+from qdrant_client.models import (
+    FieldCondition,
+    Filter,
+    MatchAny,
+    MatchText,
+    MatchValue,
+    Range,
+)
+
 from tsa.catalog.models import GenderType, Offer, StructuredQuery
+from tsa.config import settings
 
 
 async def query_catalog(
@@ -122,10 +124,40 @@ async def query_catalog(
     return response
 
 
+async def query_catalog_by_sku(sku: str) -> List[Offer] | None:
+    """
+    Query the catalog by SKU (id or vendor_id).
+    Performs a case-insensitive exact match search.
+
+    Args:
+        sku: The SKU string to search for (matches against id or vendor_id)
+
+    Returns:
+        Optional[Offer]: The matching offer if found, None otherwise
+    """
+    # Build filter conditions for case-insensitive match on either id or vendor_id
+    filter_conditions = Filter(
+        should=[
+            FieldCondition(key="tsum_sku", match=MatchText(text=sku)),
+            FieldCondition(key="vendor_sku", match=MatchText(text=sku)),
+        ],
+        must=[FieldCondition(key="available", match=MatchValue(value=True))],
+    )
+
+    # Query Qdrant directly
+    results, _ = settings.qdrant.client.scroll(
+        collection_name=settings.qdrant.collection,
+        scroll_filter=filter_conditions,
+        limit=5,
+        with_payload=True,
+    )
+    return [Offer(**res.payload) for res in results]
+
+
 if __name__ == "__main__":
     # Example usage
-    import time
     import asyncio
+    import time
 
     start_time = time.time()
     results = asyncio.run(

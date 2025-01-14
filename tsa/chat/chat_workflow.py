@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from tsa.catalog.models import StructuredQuery
 from tsa.catalog.search_workflow import SearchWorkflow
+from tsa.catalog.query import query_catalog_by_sku
 from tsa.chat.chat_events import (
     AgentRunEvent,
     CatalogRequestEvent,
@@ -17,9 +18,12 @@ from tsa.chat.chat_events import (
     FashionTrendsRequestEvent,
     FashionTrendsResponseEvent,
     OfferFilteredEvent,
+    OfferStreamEvent,
     ProcessInputRequestEvent,
     ProcessInputResultEvent,
     ProgressEvent,
+    SKURequestEvent,
+    SKUResponseEvent,
 )
 from tsa.models.customer import Customer
 from tsa.styleguide.trend_perplexity import fetch_fashion_trends
@@ -33,7 +37,7 @@ class ProcessInputResult(BaseModel):
 
     right_away_answer: Optional[str] = Field(
         default=None,
-        description="Answer to the user request right away, if nothing else needed. If you want to execute catalog search or fashion trends search, do not include this field.",
+        description="Answer to the user request right away, if nothing else needed. If you want to execute catalog search, fashion trends search or itemid search, do not include this field.",
     )
     catalog_search_required: bool = Field(
         description="Whether catalog search is required"
@@ -41,11 +45,16 @@ class ProcessInputResult(BaseModel):
     trends_search_required: bool = Field(
         description="Whether fashion trends search is required"
     )
+    sku_search_required: bool = Field(description="Whether sku search is required")
     search_query: Optional[StructuredQuery] = Field(
         default=None, description="Structured query for catalog search"
     )
     trends_query: Optional[str] = Field(
         default=None, description="Query for fashion trends search"
+    )
+    sku_query: Optional[str] = Field(
+        default=None,
+        description="Product article number, item id, sku or product code customer is asking for (like 6999030, APT0118570, 10128-PG, HE00416466 etc.)",
     )
 
 
@@ -75,7 +84,12 @@ class MainWorkflow(Workflow):
     @step
     async def process_input(
         self, ctx: Context, ev: ProcessInputRequestEvent
-    ) -> CatalogRequestEvent | FashionTrendsRequestEvent | ProcessInputResultEvent:
+    ) -> (
+        CatalogRequestEvent
+        | FashionTrendsRequestEvent
+        | ProcessInputResultEvent
+        | SKURequestEvent
+    ):
         # TODO: answer right away
         # TODO: Structure streaming ?!
         """
@@ -88,8 +102,9 @@ class MainWorkflow(Workflow):
         prompt = f"""
             You are a helpful shopping assistant that helps user to find the best offer for their request. Please answer in request language.
             You will be given a user request and you will need to create a plan of execution for the request and it's summary.
-            You will also need to determine if catalog search is required and if fashion trends search is required.
+            You will also need to determine if search by sku is required, catalog search is required and if fashion trends search is required (choose one).
 
+            If sku search is required, you will need set sku_query to the sku customer is asking for and skip catalog search and fashion trends search.
             If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
             If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
@@ -108,21 +123,23 @@ class MainWorkflow(Workflow):
             prompt += f"\n\n Previous conversation history: {history_str}"
 
         if self._streaming:
-            res = await self.llm.astream_structured_predict(
-                output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
-            )
+            ...
+            # @TODO STREAMING IS DISABLED FOR NOW, RESURECT WHEN SCAFFOLDING IS DONE
+            # res = await self.llm.astream_structured_predict(
+            #     output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
+            # )
 
-            search_launched = False
+            # search_launched = False
 
-            async for token in res:
-                if not search_launched:
-                    q = token.search_query
-                    print(q)
-                    if q and q.complete and token.catalog_search_required:
-                        ctx.send_event(CatalogRequestEvent(structured_query=q))
-                        search_launched = True
+            # async for token in res:
+            #     if not search_launched:
+            #         q = token.search_query
+            #         print(q)
+            #         if q and q.complete and token.catalog_search_required:
+            #             ctx.send_event(CatalogRequestEvent(structured_query=q))
+            #             search_launched = True
 
-            res = token
+            # res = token
         else:
             res = await self.llm.astructured_predict(
                 output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
@@ -140,6 +157,8 @@ class MainWorkflow(Workflow):
                 ctx.send_event(CatalogRequestEvent(structured_query=res.search_query))
             if res.trends_search_required:
                 ctx.send_event(FashionTrendsRequestEvent(query=res.trends_query))
+            if res.sku_search_required:
+                ctx.send_event(SKURequestEvent(query=res.sku_query))
 
         return ProcessInputResultEvent()
 
@@ -182,6 +201,24 @@ class MainWorkflow(Workflow):
         return CatalogResponseEvent(catalog_summary=summary)
 
     @step
+    async def execute_sku_search(
+        self, ctx: Context, ev: SKURequestEvent
+    ) -> SKUResponseEvent:
+        """
+        Execute sku search
+        """
+        offers = await query_catalog_by_sku(ev.query)
+        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers))
+        ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=offers))
+        logger.info(f"Found {offers} offers for sku {ev.query}")
+
+        summary = (
+            "\n\n".join([offer.description for offer in offers]) if offers else None
+        )
+        logger.info(f"SKU search summary: {summary}")
+        return SKUResponseEvent(offers=offers, summary=summary)
+
+    @step
     async def execute_fashion_trends_search(
         self, ctx: Context, ev: FashionTrendsRequestEvent
     ) -> FashionTrendsResponseEvent | CatalogRequestEvent:
@@ -206,16 +243,24 @@ class MainWorkflow(Workflow):
     async def finalize(
         self,
         ctx: Context,
-        ev: CatalogResponseEvent | FashionTrendsResponseEvent | ProcessInputResultEvent,
+        ev: (
+            CatalogResponseEvent
+            | FashionTrendsResponseEvent
+            | ProcessInputResultEvent
+            | SKUResponseEvent
+        ),
     ) -> StopEvent:
 
         pending_events = [ProcessInputResultEvent]
         input = await ctx.get("processed_input")
 
+        # TODO this can lead to infinite wait if we manually skip some (for example skip catalog search if sku search was called)
         if input.catalog_search_required:
             pending_events.append(CatalogResponseEvent)
         if input.trends_search_required:
             pending_events.append(FashionTrendsResponseEvent)
+        if input.sku_search_required:
+            pending_events.append(SKUResponseEvent)
 
         res = ctx.collect_events(ev, pending_events)
         if res is None:
@@ -228,17 +273,27 @@ class MainWorkflow(Workflow):
             if isinstance(ev, CatalogResponseEvent):
                 if ev.catalog_summary:
                     context_parts.append(
-                        f"We have executed catalog search and found the following offers: {ev.catalog_summary}, please offer client a short summary."
+                        f"We have executed catalog search and found the following offers: {ev.catalog_summary},we already showed them to the client, please add short summary."
                     )
                 else:
                     context_parts.append(
-                        f"We have executed catalog search and found no offers. Please apologize to user and offer to try again with less specific request."
+                        f"We have executed catalog search and found no offers. Please tell user that there's now offers with this sku available."
                     )
 
             if isinstance(ev, FashionTrendsResponseEvent):
                 context_parts.append(
                     f"We have executed fashion trends search and found the following information: {ev.response}."
                 )
+
+            if isinstance(ev, SKUResponseEvent):
+                if ev.summary:
+                    context_parts.append(
+                        f"We  have executed sku search and found the following: {ev.summary}, we already showed them to the client, please add short summary."
+                    )
+                else:
+                    context_parts.append(
+                        f"We have executed sku search and found no offers. Please apologize to user and offer to try again with less specific request."
+                    )
 
         prompt = PromptTemplate(
             """
