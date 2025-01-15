@@ -245,7 +245,7 @@ def load_to_qdrant(
                 existing_hashes = []
 
             for n in check_batch:
-                if n.metadata["hash"] not in existing_hashes or not existing_hashes:
+                if  n.metadata.get("hash") not in existing_hashes or not existing_hashes:
                     batch.append(n)
                 else:
                     total_skipped += 1
@@ -295,7 +295,7 @@ def load_to_qdrant(
                 point.payload["hash"] = None # reset hash to force update
                 unavailable_points.append(point)
             
-            logger.info(f"Processed {len(points)} points, found {len(unavailable_points)} unavailable")
+        logger.info(f"Processed {len(points)} points, found {len(unavailable_points)} unavailable")
 
         if offset is None:
             break

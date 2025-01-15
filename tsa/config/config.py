@@ -41,8 +41,8 @@ class CatalogSettings(TsaSettings):
     parse_limit: Optional[int] = Field(
         None, description="Limit number of items to process, None for no limit"
     )
-    parse_batch: int = Field(100, description="Batch size for processing items")
-    check_size: int = Field(5000, description="Batch size for checking processed items")
+    parse_batch: int = Field(500, description="Batch size for processing items")
+    check_size: int = Field(500, description="Batch size for checking processed items")
 
     @computed_field
     def catalog_file_path(self) -> Path:

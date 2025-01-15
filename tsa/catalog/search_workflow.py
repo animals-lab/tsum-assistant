@@ -39,7 +39,7 @@ class ValidationResultEvent(Event):
 
 
 class SearchWorkflow(Workflow):
-    validation_limit = 3
+    validation_limit = 5
     query_limit = 20
     score_threshold = 70
 
@@ -93,15 +93,24 @@ class SearchWorkflow(Workflow):
         """
         Calls the query_catalog function with the structured query.
         """
-        query = ev.structured_query
+        query = StructuredQuery(**ev.structured_query.model_dump())
         offers, scores = await query_catalog(query)
-        if len(offers) == 0:
-            query.category = None
-            offers, scores = await query_catalog(query)
+
+        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+
+        if len(offers) < self.validation_limit:
+            query.brands = None
+            logger.info(
+                f"Querying catalog with reduced query: {query.to_short_description()}"
+            )
+            _offers, _scores = await query_catalog(query)
+            ctx.write_event_to_stream(ev=OfferStreamEvent(offers=_offers[::-1]))
+            offers.extend(_offers)
+            scores.extend(_scores)
 
         # reverse order for frontend
-        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
-       
+        
+
         return QueryResultsEvent(
             offers=offers[: self.validation_limit],
             scores=scores[: self.validation_limit],
@@ -122,13 +131,18 @@ class SearchWorkflow(Workflow):
         input_query = await ctx.get("input_query")
         query_text = input_query if input_query else structured_query.model_dump_json()
 
-        prompt = "User searched for product with query '{query_text}', please score the offer '{offer}' on how well it matches the query. score must be integer between 0 and 100. Return only the score. "
+        prompt = "User searched for product with query '{structured_query}', please score the offer '{offer}' on how well it matches the query. score must be integer between 0 and 100. Return only the score. "
 
         res = []
 
         for offer in ev.offers:
             res.append(
-                self.llm.acomplete(prompt=prompt.format(query_text=query_text, offer=offer.description))
+                self.llm.acomplete(
+                    prompt=prompt.format(
+                        structured_query=structured_query.to_short_description(),
+                        offer=f"{offer.name} {offer.description}",
+                    )
+                )
             )
         scores = [int(res.text) for res in await asyncio.gather(*res)]
 
@@ -144,10 +158,11 @@ class SearchWorkflow(Workflow):
         not_validated_offers = [
             offer for offer, score in zip(ev.offers, scores) if score < threshhold
         ]
+        logger.info(f"validation scores: {scores}")
 
         return ValidationResultEvent(
-            validated_offers=validated_offers,
-            not_validated_offers=not_validated_offers,
+            validated_offers=validated_offers[:3],
+            not_validated_offers=validated_offers[3:] + not_validated_offers,
         )
 
     @step

@@ -79,7 +79,6 @@ class Offer(BaseModel):
     has_discount: Optional[bool] = None
 
     hash: Optional[str] = None
-    embedding_hash: Optional[str] = None # separate hash for fields that are used for embedding
     # Remaining parameters
     # params: Dict[str, Optional[str]] = Field(default_factory=dict)
 
@@ -169,12 +168,13 @@ class Offer(BaseModel):
             set(categories_from_tree + categories_from_param)
         )
 
-        hash_data = basic_data  # {k: v for k, v in basic_data.items() if k not in ["available"]}
+        if basic_data.get("discount") == "Да":
+            basic_data["has_discount"] = True
         basic_data["params"] = params
 
-        basic_data["hash"] = hashlib.md5(
-            str(json.dumps(hash_data, default=str)).encode()
-        ).hexdigest()
+        # hash_data = basic_data  # {k: v for k, v in basic_data.items() if k not in ["available"]}
+        offer = Offer(**basic_data)
+        offer.hash = hashlib.md5(str(offer.model_dump_json()).encode()).hexdigest()
 
         return Offer(**basic_data)
 
@@ -223,3 +223,31 @@ class StructuredQuery(BaseModel):
     #     False, description="Must be set to true by agent when it creates a query!"
     # )
     # needed for streaming
+
+    def to_short_description(self) -> str:
+        """Creates a short text description of the query, including only set fields."""
+        parts = []
+        
+        if self.brands:
+            parts.append(f"бренды: {', '.join(self.brands)}")
+        if self.blocked_brands:
+            parts.append(f"исключая бренды: {', '.join(self.blocked_brands)}")
+        if self.categories:
+            parts.append(f"категории: {', '.join(self.categories)}")
+        if self.colors:
+            parts.append(f"цвета: {', '.join(self.colors)}")
+        if self.gender:
+            parts.append(f"пол: {self.gender}")
+        if self.min_price is not None:
+            parts.append(f"цена от {self.min_price}")
+        if self.max_price is not None:
+            parts.append(f"цена до {self.max_price}")
+        if self.materials:
+            parts.append(f"материалы: {', '.join(self.materials)}")
+        if self.query_text:
+            parts.append(f"поиск: {self.query_text}")
+        if self.has_discount is not None:
+            parts.append("со скидкой" if self.has_discount else "без скидки")
+            
+        return "; ".join(parts) if parts else ""
+        
