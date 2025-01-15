@@ -16,6 +16,7 @@ from tsa.config import settings
 
 async def query_catalog(
     structured_query: StructuredQuery,
+    limit: int = 20,
 ) -> tuple[list[Offer], list[float]]:
     """
     Query the catalog.
@@ -39,9 +40,9 @@ async def query_catalog(
 
     # Handle list filters
     for field, values in [
-        ("vendor", structured_query.brand),
-        ("color", structured_query.color),
-        ("material", structured_query.material),
+        ("vendor", structured_query.brands),
+        ("color", structured_query.colors),
+        ("material", structured_query.materials),
     ]:
         if not values:
             continue
@@ -56,14 +57,14 @@ async def query_catalog(
         must_conditions.append(Filter(should=should_conditions))
 
     # Handle category filter separately since it's a list field in Qdrant
-    if structured_query.category:
-        if isinstance(structured_query.category, str):
-            structured_query.category = [structured_query.category]
+    if structured_query.categories:
+        if isinstance(structured_query.categories, str):
+            structured_query.categories = [structured_query.categories]
 
         # Use MatchAny to match any category from the query with any category in the document
         must_conditions.append(
             FieldCondition(
-                key="categories", match=MatchAny(any=structured_query.category)
+                key="categories", match=MatchAny(any=structured_query.categories)
             )
         )
 
@@ -75,10 +76,14 @@ async def query_catalog(
             )
         )
 
+    # handle has_discount
+    if structured_query.has_discount:
+        must_conditions.append(FieldCondition(key="has_discount", match=MatchValue(value=True)))
+
     # Create retriever with filters if any exist
     retriever_kwargs = {
-        "similarity_top_k": structured_query.limit,
-        "sparse_top_k": structured_query.limit * 10,
+        "similarity_top_k": limit,
+        "sparse_top_k": limit * 10,
     }
     if must_conditions:
         retriever_kwargs["vector_store_kwargs"] = {
@@ -97,8 +102,8 @@ async def query_catalog(
             [node.score for node in results],
         )
     else:
-        # Calculate the batch size needed to cover the requested offset + limit
-        batch_size = structured_query.offset + structured_query.limit
+        # Calculate the batch size needed to cover the requested offset + limit | TODO: check if this is correct
+        batch_size =  limit
 
         # For non-query cases, use scroll with calculated batch size
         results = settings.qdrant.client.scroll(
@@ -112,13 +117,13 @@ async def query_catalog(
         ]  # Get just the points array
 
         # Get the requested page
-        start_idx = structured_query.offset
-        end_idx = min(start_idx + structured_query.limit, len(results))
-        page_results = results[start_idx:end_idx]
+        # start_idx = structured_query.offset
+        # end_idx = min(start_idx + limit, len(results))
+        # page_results = results[start_idx:end_idx]
 
         response = (
-            [Offer(**point.payload) for point in page_results],
-            [1.0] * len(page_results),  # Use default score for non-query results
+            [Offer(**point.payload) for point in results],
+            [1.0] * len(results),  # Use default score for non-query results
         )
 
     return response

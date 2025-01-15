@@ -19,18 +19,21 @@ router = APIRouter()
 @router.get("/catalog", response_model=CatalogQueryResponse)
 async def get_catalog(
     query_text: str = Query(default="", description="Free-form text query"),
-    brand: Optional[List[str]] = Query(
+    brands: Optional[List[str]] = Query(
         default=None, description="List of brand names"
     ),
-    category: Optional[List[str]] = Query(
+    categories: Optional[List[str]] = Query(
         default=None, description="List of product categories"
     ),
-    color: Optional[List[str]] = Query(default=None, description="List of colors"),
+    colors: Optional[List[str]] = Query(default=None, description="List of colors"),
     gender: Optional[GenderType] = Query(default=None, description="Gender filter"),
     min_price: Optional[float] = Query(default=None, description="Minimum price"),
     max_price: Optional[float] = Query(default=None, description="Maximum price"),
-    material: Optional[List[str]] = Query(
+    materials: Optional[List[str]] = Query(
         default=None, description="List of materials"
+    ),
+    has_discount: Optional[bool] = Query(
+        default=None, description="Whether the product has a discount."
     ),
     limit: int = Query(
         default=10, ge=1, le=100, description="Number of results to return"
@@ -45,8 +48,8 @@ async def get_catalog(
     http://localhost:8000/api/catalog?vendor=Gucci&vendor=Prada&material=Кашемир&material=Шерсть&offset=20&limit=20
     http://localhost:8000/api/catalog?query_text=кожаная%20сумка&color=Чёрный&min_price=50000&max_price=200000&vendor=Prada
     """
-    if customer and not brand:
-        brand = customer.liked_brand_names
+    if customer and not brands:
+        brands = customer.liked_brand_names
     if customer and not gender:
         gender = customer.gender_literal
 
@@ -56,18 +59,17 @@ async def get_catalog(
         # Create StructuredQuery instance from parameters
         query = StructuredQuery(
             query_text=query_text or None,  # Convert empty string to None
-            brand=brand,
-            category=category,
-            color=color,
+            brands=brands,
+            categories=categories,
+            colors=colors,
             gender=gender,
             min_price=min_price,
             max_price=max_price,
-            material=material,
-            limit=limit,
-            offset=offset,
+            materials=materials,
+            has_discount=has_discount
         )
 
-        items, scores = await query_catalog(query)
+        items, scores = await query_catalog(query, limit=limit)
         return CatalogQueryResponse(items=items, scores=scores)
     except Exception as e:
         logger.error(f"Error in catalog query: {str(e)}")

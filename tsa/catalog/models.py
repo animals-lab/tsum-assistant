@@ -59,7 +59,7 @@ class Offer(BaseModel):
     # Optional basic fields
     available: bool = True
     price: Optional[int] = None
-    # old_price: Optional[int] = None
+    old_price: Optional[int] = None
     # currency: Optional[str] = None
     # category_id: Optional[int] = None
     vendor: Optional[str] = None
@@ -76,8 +76,10 @@ class Offer(BaseModel):
     season: Optional[str] = None
     material: Optional[str] = None
     categories: List[str] = Field(default_factory=list)
+    has_discount: Optional[bool] = None
 
     hash: Optional[str] = None
+    embedding_hash: Optional[str] = None # separate hash for fields that are used for embedding
     # Remaining parameters
     # params: Dict[str, Optional[str]] = Field(default_factory=dict)
 
@@ -188,14 +190,17 @@ from pydantic import BaseModel, Field
 
 
 class StructuredQuery(BaseModel):
-    brand: Optional[List[str]] = Field(
+    brands: Optional[List[str]] = Field(
         None, description='List of brand names (e.g., "Gucci", "Dsquared2").'
     )
-    category: Optional[List[str]] = Field(
+    blocked_brands: Optional[List[str]] = Field(
+        None, description='List of brand names to exclude (e.g., "EA7", "Off-White").'
+    )
+    categories: Optional[List[str]] = Field(
         None,
         description='List of product categories in Russian, plural (e.g., "Платья", "Вечерние платья", "Блузки", "Кеды").',
     )
-    color: Optional[List[str]] = Field(
+    colors: Optional[List[str]] = Field(
         None, description='List of colors (e.g., "Чёрный", "Белый", "Красный").'
     )
     gender: Optional[GenderType] = Field(
@@ -203,18 +208,18 @@ class StructuredQuery(BaseModel):
     )
     min_price: Optional[float] = Field(None, description="Minimum price filter.")
     max_price: Optional[float] = Field(None, description="Maximum price filter.")
-    material: Optional[List[str]] = Field(
+    materials: Optional[List[str]] = Field(
         None, description='List of materials (e.g., "Хлопок", "Шерсть", "Кашемир").'
     )
     query_text: Optional[str] = Field(
         None,
-        description='Free-form text query (e.g., "элегантное платье", "черные туфли", "модный свитер", "большой вырез"). Include only details not mentioned in other fields.',
+        description='Free-form text query (e.g., "элегантное и легкое", "в клеточку", "в стиле олдмани", "с красной аппликацией"). Include only details not mentioned in other fields.',
+    )
+    has_discount: Optional[bool] = Field(
+        None, description="Whether the product has a discount."
     )
 
-    limit: int = Field(20, description="Number of results to return (default is 10).")
-    offset: int = Field(
-        0, description="Number of results to skip for pagination (default is 0)."
-    )
-    complete: bool = Field(
-        False, description="Must be set to true by agent when it creates a query!"
-    )
+    # complete: bool = Field(
+    #     False, description="Must be set to true by agent when it creates a query!"
+    # )
+    # needed for streaming
