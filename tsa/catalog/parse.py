@@ -161,9 +161,7 @@ def stream_text_nodes_from_offers(
     for offer in offers:
         text = offer.to_text()
         metadata = offer.model_dump(exclude_none=True, exclude_unset=True)
-        yield TextNode(text=text, metadata=metadata, id_=offer.id) # do we really need _id
-        # yield TextNode(text=text, metadata=metadata)
-
+        yield TextNode(text=text, metadata=metadata, id_=offer.id)
 
 async def update_brands(brand_name: str):
     async with settings.db.async_session_maker() as session:
