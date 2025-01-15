@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Any, Optional
 
 from llama_index.core.memory import ChatMemoryBuffer
@@ -52,9 +53,9 @@ class ProcessInputResult(BaseModel):
     trends_query: Optional[str] = Field(
         default=None, description="Query for fashion trends search"
     )
-    sku_query: Optional[str] = Field(
+    sku_query: Optional[list[str]] = Field(
         default=None,
-        description="Product article number, item id, sku or product code customer is asking for (like 6999030, APT0118570, 10128-PG, HE00416466 etc.)",
+        description="List of product article numbers, item ids, skus or product codes customer is asking for (like 6999030, APT0118570, 10128-PG, HE00416466 etc.)",
     )
 
 
@@ -90,8 +91,14 @@ class MainWorkflow(Workflow):
         | ProcessInputResultEvent
         | SKURequestEvent
     ):
-        # TODO: answer right away
         # TODO: Structure streaming ?!
+
+        # preprocess user message without LLM
+        user_msg = ev.user_msg
+        user_msg = re.sub(r"https://www\.tsum\.ru/product/(\w+)-.*?/", r"\1", user_msg)
+
+        logger.debug(f"Processed user message: {user_msg}")
+
         """
         Process user input and emit events
         0. Create plan of execution
@@ -109,7 +116,7 @@ class MainWorkflow(Workflow):
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
             If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
     
-            User request: {ev.user_msg}
+            User request: {user_msg}
             """
         ctx.write_event_to_stream(
             ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос...")
@@ -158,7 +165,8 @@ class MainWorkflow(Workflow):
             if res.trends_search_required:
                 ctx.send_event(FashionTrendsRequestEvent(query=res.trends_query))
             if res.sku_search_required:
-                ctx.send_event(SKURequestEvent(query=res.sku_query))
+                for sku in res.sku_query:
+                    ctx.send_event(SKURequestEvent(query=sku))
 
         return ProcessInputResultEvent()
 
@@ -260,7 +268,8 @@ class MainWorkflow(Workflow):
         if input.trends_search_required:
             pending_events.append(FashionTrendsResponseEvent)
         if input.sku_search_required:
-            pending_events.append(SKUResponseEvent)
+            for _ in input.sku_query:
+                pending_events.append(SKUResponseEvent)
 
         res = ctx.collect_events(ev, pending_events)
         if res is None:
