@@ -6,6 +6,7 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step
 from llama_index.llms.openai import OpenAI
+from llama_index.core.llms import ChatMessage
 from loguru import logger
 from pydantic import BaseModel, Field
 
@@ -94,6 +95,7 @@ class MainWorkflow(Workflow):
         # TODO: Structure streaming ?!
 
         # preprocess user message without LLM
+        # TODO: move to separate function
         user_msg = ev.user_msg
         user_msg = re.sub(r"https://www\.tsum\.ru/product/(\w+)-.*?/", r"\1", user_msg)
 
@@ -106,7 +108,7 @@ class MainWorkflow(Workflow):
         2. Request catalog search if required
         3. Request fashion trends search if required
         """
-        prompt = f"""
+        prompt = """
             You are a helpful shopping assistant that helps user to find the best offer for their request. Please answer in request language.
             You will be given a user request and you will need to create a plan of execution for the request and it's summary.
             You will also need to determine if search by sku is required, catalog search is required and if fashion trends search is required (choose one).
@@ -115,8 +117,6 @@ class MainWorkflow(Workflow):
             If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
             If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
-    
-            User request: {user_msg}
             """
         ctx.write_event_to_stream(
             ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос...")
@@ -124,13 +124,22 @@ class MainWorkflow(Workflow):
         if self.customer and self.customer.prompt:
             prompt += f"\n\n{self.customer.prompt}"
 
+        messages = [
+            ChatMessage(role="system", content=prompt),
+        ]
+
         history = self.chat_memory.get_all()
         if history:
-            history_str = "\n".join([f"{msg.role}: {msg.content}" for msg in history])
-            prompt += f"\n\n Previous conversation history: {history_str}"
+            for msg in history:
+                messages.append(ChatMessage(role=msg.role, content=msg.content))
+            # history_str = "\n".join([f"{msg.role}: {msg.content}" for msg in history])
+            # prompt += f"\n\n Previous conversation history, use it to understand user requests better: ------ \n{history_str} ------ \n"
+        
+        messages.append(ChatMessage(role="user", content=user_msg))
+        sllm = self.llm.as_structured_llm(output_cls=ProcessInputResult)
+        res = (await sllm.achat(messages=messages)).raw
 
-        if self._streaming:
-            ...
+        # if self._streaming:
             # @TODO STREAMING IS DISABLED FOR NOW, RESURECT WHEN SCAFFOLDING IS DONE
             # res = await self.llm.astream_structured_predict(
             #     output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
@@ -147,10 +156,10 @@ class MainWorkflow(Workflow):
             #             search_launched = True
 
             # res = token
-        else:
-            res = await self.llm.astructured_predict(
-                output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
-            )
+        # else:
+            # res = await self.llm.astructured_predict(
+            #     output_cls=ProcessInputResult, prompt=PromptTemplate(prompt)
+            # )
 
         print(f"Processed input: {res}")
 
