@@ -96,6 +96,7 @@ class QdrantSettings(TsaSettings):
 class LLMSettings(TsaSettings):
     """Settings for LLM and embeddings."""
 
+    
     model_config = SettingsConfigDict(case_sensitive=False)
 
     embedding_model: str = Field(
@@ -109,6 +110,8 @@ class LLMSettings(TsaSettings):
         description="OpenAI LLM model name",
         env="OPENAI_LLM_MODEL",
     )
+
+    use_observability: bool = Field(False, description="Use observability")
 
     def setup_llama_settings(self) -> None:
         """Configure LlamaIndex settings."""

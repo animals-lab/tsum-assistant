@@ -8,7 +8,8 @@ from tsa.api.lib.db import get_current_customer
 
 from tsa.api.routers import catalog, chat
 from llama_index.llms.openai import OpenAI
-from llama_index.core.settings import Settings
+from llama_index.core.settings import Settings as LlamaSettings
+from tsa.config import settings
 
 # Set up logging
 # Set up root logger with custom formatter
@@ -19,10 +20,11 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-Settings.llm = OpenAI(model="gpt-4o-mini", temperature=0.4)
-llama_index.core.set_global_handler(
-    "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
-)
+LlamaSettings.llm = OpenAI(model="gpt-4o-mini", temperature=0.4)
+if settings.llm.use_observability:
+    llama_index.core.set_global_handler(
+        "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
+    )
 
 
 # Set specific levels for different loggers

@@ -99,7 +99,7 @@ class MainWorkflow(Workflow):
         user_msg = ev.user_msg
         user_msg = re.sub(r"https://www\.tsum\.ru/product/(\w+)-.*?/", r"\1", user_msg)
 
-        logger.debug(f"Processed user message: {user_msg}")
+        logger.debug(f"Received user message: {user_msg}")
 
         """
         Process user input and emit events
