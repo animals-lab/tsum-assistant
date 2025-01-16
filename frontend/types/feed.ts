@@ -1,23 +1,24 @@
 export interface Product {
   id: string;
+  tsum_sku: string;
+  vendor_sku: string;
   name: string;
   url: string;
-  price: string;
-  oldprice?: string;
-  currencyId: string;
+  price: number;
+  old_price?: number;
+  vendor: string;
   picture: string;
-  brand: string;
   description: string;
   available: boolean;
   color?: string;
-  material?: string;
+  color_shade?: string;
+  design_country?: string;
+  gender?: string;
   season?: string;
-  params?: {
-    design_country?: string;
-    gender?: string;
-    category?: string;
-  };
-  categoryId?: string;
+  material?: string;
+  categories?: string[];
+  has_discount: boolean;
+  hash?: string | null;
 }
 
 export interface FeedResponse {

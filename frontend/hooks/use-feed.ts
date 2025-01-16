@@ -60,23 +60,26 @@ export function useFeed(chatProducts: Product[] = []) {
       // Transform the data to match our frontend interface
       const transformedItems = data.items.map((item: any) => ({
         id: item.id.toString(),
+        tsum_sku: item.tsum_sku,
+        vendor_sku: item.vendor_sku,
         name: item.name,
         url: item.url,
-        price: item.price.toString(),
-        currencyId: 'RUB',
+        price: item.price,
+        old_price: item.old_price,
+        vendor: item.vendor,
         picture: item.picture,
-        brand: item.vendor,
         description: item.description,
         available: item.available,
         color: item.color,
-        material: item.material,
+        color_shade: item.color_shade,
+        design_country: item.design_country,
+        gender: item.gender,
         season: item.season,
-        params: {
-          design_country: item.design_country,
-          gender: item.gender,
-          category: item.category
-        },
-        categoryId: item.category_id?.toString()
+        material: item.material,
+        categories: item.categories,
+        has_discount: item.has_discount,
+        hash: item.hash,
+        discount: item.old_price ? Math.round(((item.old_price - item.price) / item.old_price) * 100) : 0
       }))
 
       // Only replace items on initial load
