@@ -32,7 +32,7 @@ export function ProductFeed({ chatProducts, className }: ProductFeedProps) {
   }, [customer?.id])
 
   return (
-    <div className={cn("grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4", className)}>
+    <div className={cn("grid grid-cols-auto-fit gap-6 justify-center", className)}>
       <AnimatePresence>
         {products.map((product, index) => (
           <motion.div

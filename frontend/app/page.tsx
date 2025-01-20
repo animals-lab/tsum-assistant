@@ -32,7 +32,7 @@ export default function Page() {
         variant="sidebar"
         onNewProducts={handleNewChatProducts} 
       />
-      <main className="flex-1 min-h-screen p-4 pl-[532px] md:p-6 md:pl-[532px] lg:p-8 lg:pl-[532px]">
+      <main className="flex-1 min-h-screen p-4 pl-[615px] md:p-6 md:pl-[615px] lg:p-8 lg:pl-[615px]">
         <div className="max-w-[1800px] mx-auto">
           <ProductFeed chatProducts={chatProducts} />
         </div>
