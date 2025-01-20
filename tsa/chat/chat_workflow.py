@@ -208,7 +208,7 @@ class MainWorkflow(Workflow):
         # found some offers
         if result:
             ctx.write_event_to_stream(ev=OfferFilteredEvent(offers=result))
-            summary = "\n\n".join([offer.description for offer in result])
+            summary = "\n\n".join([offer.to_summary() for offer in result])
             logger.info(f"Catalog summary: {summary}")
 
         ctx.write_event_to_stream(
@@ -230,7 +230,7 @@ class MainWorkflow(Workflow):
         logger.info(f"Found {offers} offers for sku {ev.query}")
 
         summary = (
-            "\n\n".join([offer.description for offer in offers]) if offers else None
+            "\n\n".join([offer.to_summary() for offer in offers]) if offers else None
         )
         logger.info(f"SKU search summary: {summary}")
         return SKUResponseEvent(offers=offers, summary=summary)

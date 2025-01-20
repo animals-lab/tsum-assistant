@@ -100,6 +100,12 @@ class Offer(BaseModel):
             lines.append(self.design_country)
 
         return "\n".join(lines)
+    
+    def to_summary(self) -> str:
+        summary = f"{self.name} {self.description}"
+        if self.vendor and self.vendor not in summary:
+            summary = f" {self.vendor} {summary}"
+        return summary
 
     @staticmethod
     def from_xml_element(elem: ET.Element, categories: Dict[str, dict]) -> "Offer":
