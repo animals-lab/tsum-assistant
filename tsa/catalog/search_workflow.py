@@ -112,17 +112,27 @@ class SearchWorkflow(Workflow):
 
         ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
+        #  fallback to query with category moved to text query 
         if not offers:
-            query.brands = None
-            logger.info(
-                f"Querying catalog with reduced query: {query.to_short_description()}"
-            )
-            _offers, _scores = await query_catalog(query)
-            ctx.write_event_to_stream(ev=OfferStreamEvent(offers=_offers[::-1]))
-            offers.extend(_offers)
-            scores.extend(_scores)
+            if query.categories:
+                query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.categories)}"
+                query.categories = None
 
-        # reverse order for frontend
+                logger.debug(f"Fallback to query with category moved to text query: {query.query_text}")
+                offers, scores = await query_catalog(query)
+                ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+        
+        # if not offers:
+        #     query.brands = None
+        #     logger.info(
+        #         f"Querying catalog with reduced query: {query.to_short_description()}"
+        #     )
+        #     _offers, _scores = await query_catalog(query)
+        #     ctx.write_event_to_stream(ev=OfferStreamEvent(offers=_offers[::-1]))
+        #     offers.extend(_offers)
+        #     scores.extend(_scores)
+
+        # # reverse order for frontend
         
 
         return QueryResultsEvent(
@@ -154,12 +164,12 @@ class SearchWorkflow(Workflow):
                 self.llm.acomplete(
                     prompt=prompt.format(
                         structured_query=structured_query.to_short_description(),
-                        offer=f"{offer.name} {offer.description}",
+                        offer=offer.to_summary(),
                     )
                 )
             )
         scores = [int(res.text) for res in await asyncio.gather(*res)]
-
+        
         threshhold = 50
         validated_offers = [
             offer

@@ -102,9 +102,27 @@ class Offer(BaseModel):
         return "\n".join(lines)
     
     def to_summary(self) -> str:
-        summary = f"{self.name} {self.description}"
+        summary = self.description
+
+        for cat in self.categories:
+            if cat not in summary:
+                summary = f" {cat} {summary}"
+
+        if self.name and self.name not in summary:
+            summary = f"{self.name} {summary}"
+        
         if self.vendor and self.vendor not in summary:
             summary = f" {self.vendor} {summary}"
+        
+        if self.color_shade:
+            if self.color_shade not in summary:
+                summary = f" {self.color_shade} {summary}"
+        elif self.color:
+            if self.color not in summary:
+                summary = f" {self.color} {summary}"
+
+        
+
         return summary
 
     @staticmethod

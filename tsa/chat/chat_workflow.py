@@ -116,7 +116,7 @@ class MainWorkflow(Workflow):
             If user asks about availability of a product, please check if it's available in the catalog and if it is, show it to the user.
 
             If sku search is required, you will need set sku_query to the sku customer is asking for and skip catalog search and fashion trends search.
-            If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.
+            If catalog search is required, you will need to create a structured query for the catalog search using user request and query context. do not customer preferences in the query.
             If fashion trends search is required, you will need to create a query for the fashion trends search using user request and query context.
             If you can answer the user request right away (user just want to chat), please do so, but remember, you are a frendly shopping assistant, not a chatbot.
             """
