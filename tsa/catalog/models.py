@@ -191,10 +191,10 @@ from pydantic import BaseModel, Field
 
 class StructuredQuery(BaseModel):
     brands: Optional[List[str]] = Field(
-        None, description='List of brand names (e.g., "Gucci", "Dsquared2").'
+        [], description='List of brand names (e.g., "Gucci", "Dsquared2").'
     )
     blocked_brands: Optional[List[str]] = Field(
-        None, description='List of brand names to exclude (e.g., "EA7", "Off-White").'
+        [], description='List of brand names to exclude (e.g., "EA7", "Off-White").'
     )
     categories: Optional[List[str]] = Field(
         None,

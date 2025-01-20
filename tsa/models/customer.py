@@ -59,23 +59,22 @@ class Customer(SQLModel, table=True):
             parts.append(f"Name: {self.name}")
         if self.gender:
             parts.append(
-                f"Gender, include it in queries if not explicitly asked for another gender: {self.gender.name}"
+                f"Gender: {self.gender.name}"
             )
         if self.liked_brand_names:
             parts.append(
-                f"Liked brands, you should add them to very generic queries, but don't use when user asks for any specific details : {'; '.join(self.liked_brand_names)}"
+                f"Liked brands: {'; '.join(self.liked_brand_names)}"
             )
         if self.disliked_brand_names:
             parts.append(
-                f"Disliked brands, use only if explicitly asked: {'; '.join(self.disliked_brand_names)}"
+                f"Disliked brands: {'; '.join(self.disliked_brand_names)}"
             )
         if self.style_preferences:
             parts.append(f"Style preferences: {self.style_preferences}")
         if self.description:
             parts.append(f"Description: {self.description}")
 
-        if parts:
-            parts.insert(0, "Customer profile:")
+
         return "\n".join(parts)
 
 

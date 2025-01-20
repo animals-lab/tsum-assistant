@@ -122,7 +122,7 @@ class MainWorkflow(Workflow):
             ev=AgentRunEvent(name="main", msg="Обрабатываем ваш запрос...")
         )
         if self.customer and self.customer.prompt:
-            prompt += f"\n\n{self.customer.prompt}"
+            prompt += f"\n\nCustomer profile, use it to understand user requests better, but don't include in search query: {self.customer.prompt}"
 
         messages = [
             ChatMessage(role="system", content=prompt),
@@ -189,7 +189,7 @@ class MainWorkflow(Workflow):
         ctx.write_event_to_stream(
             ev=AgentRunEvent(name="query_catalog_tool", msg="Начинаем поиск.")
         )
-        workflow = SearchWorkflow(timeout=30, verbose=True)
+        workflow = SearchWorkflow(timeout=30, verbose=True, customer=self.customer)
         task = workflow.run(structured_query=ev.structured_query, stream=True)
 
         ctx.write_event_to_stream(

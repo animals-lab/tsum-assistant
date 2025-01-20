@@ -22,6 +22,7 @@ from llama_index.core.settings import Settings
 from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 from loguru import logger
+from tsa.models.customer import Customer
 
 
 class ProcessedQueryEvent(Event):
@@ -42,10 +43,12 @@ class SearchWorkflow(Workflow):
     validation_limit = 5
     query_limit = 20
     score_threshold = 70
+    customer: Customer | None = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, customer: Customer | None = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.llm = Settings.llm
+        self.customer = customer
 
     @step
     async def process_input(
@@ -55,8 +58,8 @@ class SearchWorkflow(Workflow):
         Processes the unstructured input and creates a structured query.
         Decides if a query is needed based on the input.
         """
-        structured_query = ev.get("structured_query", None)
-        input_query = ev.get("input_query", None)
+        structured_query: StructuredQuery | None = ev.get("structured_query", None)
+        input_query: str | None = ev.get("input_query", None)
 
         if not structured_query:
             input_query = ev.get("input_query")
@@ -80,6 +83,17 @@ class SearchWorkflow(Workflow):
 
         if not structured_query:
             return StopEvent(result="No query provided.")
+
+        if self.customer:
+            # mix customer brand preferences with query brands
+            for brand in self.customer.disliked_brand_names:
+                if brand not in structured_query.brands:
+                    structured_query.blocked_brands.append(brand)
+
+            if self.customer.gender and not structured_query.gender:
+                structured_query.gender = self.customer.gender_literal
+
+
 
         await ctx.set("structured_query", structured_query)
         await ctx.set("input_query", input_query)

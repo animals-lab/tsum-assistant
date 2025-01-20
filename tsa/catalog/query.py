@@ -56,6 +56,9 @@ async def query_catalog(
         ]
         must_conditions.append(Filter(should=should_conditions))
 
+    if structured_query.blocked_brands:
+        must_conditions.append(Filter(must_not=[FieldCondition(key="vendor", match=MatchAny(any=structured_query.blocked_brands))]))
+
     # Handle category filter separately since it's a list field in Qdrant
     if structured_query.categories:
         if isinstance(structured_query.categories, str):
