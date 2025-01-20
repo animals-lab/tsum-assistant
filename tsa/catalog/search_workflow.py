@@ -112,7 +112,7 @@ class SearchWorkflow(Workflow):
 
         ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
-        if len(offers) < self.validation_limit:
+        if not offers:
             query.brands = None
             logger.info(
                 f"Querying catalog with reduced query: {query.to_short_description()}"
