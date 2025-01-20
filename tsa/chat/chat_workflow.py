@@ -112,6 +112,8 @@ class MainWorkflow(Workflow):
             You are a helpful shopping assistant that helps user to find the best offer for their request. Please answer in request language.
             You will be given a user request and you will need to create a plan of execution for the request and it's summary.
             You will also need to determine if search by sku is required, catalog search is required and if fashion trends search is required (choose one).
+            If user request is not clear, ask for clarification.
+            If user asks about availability of a product, please check if it's available in the catalog and if it is, show it to the user.
 
             If sku search is required, you will need set sku_query to the sku customer is asking for and skip catalog search and fashion trends search.
             If catalog search is required, you will need to create a structured query for the catalog search using user request and query context.

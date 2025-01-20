@@ -204,7 +204,7 @@ class StructuredQuery(BaseModel):
     )
     categories: Optional[List[str]] = Field(
         None,
-        description='List of product categories in Russian, plural (e.g., "Платья", "Вечерние платья", "Блузки", "Кеды").',
+        description='Optional list of product categories in Russian, category can be common known name of type of clothing or type of accessory, plural (e.g., "Платья", "Вечерние платья", "Блузки", "Кеды"). ',
     )
     colors: Optional[List[str]] = Field(
         None, description='List of colors (e.g., "Чёрный", "Белый", "Красный").'
