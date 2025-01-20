@@ -102,7 +102,7 @@ class Offer(BaseModel):
         return "\n".join(lines)
     
     def to_summary(self) -> str:
-        summary = self.description
+        summary = self.description or ""
 
         for cat in self.categories:
             if cat not in summary:

@@ -109,19 +109,32 @@ class SearchWorkflow(Workflow):
         """
         query = StructuredQuery(**ev.structured_query.model_dump())
         offers, scores = await query_catalog(query)
+        logger.debug(f"{"Query executed successfully" if offers else "Query returned no results"}: {query.to_short_description()}")
 
-        ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+        if offers:
+            ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
         #  fallback to query with category moved to text query 
-        if not offers:
-            if query.categories:
+        if not offers and query.categories:
                 query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.categories)}"
                 query.categories = None
 
                 logger.debug(f"Fallback to query with category moved to text query: {query.query_text}")
                 offers, scores = await query_catalog(query)
+                if offers:
+                    logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
+                    ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+
+        # fallback to query with colors moved to text query
+        if not offers and query.colors:
+            query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.colors)}"
+            query.colors = None
+            logger.debug(f"Fallback to query with colors moved to text query: {query.query_text}")
+            offers, scores = await query_catalog(query)
+            if offers:
+                logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
                 ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
-        
+
         # if not offers:
         #     query.brands = None
         #     logger.info(
