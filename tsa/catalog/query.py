@@ -75,7 +75,7 @@ async def query_catalog(
     if structured_query.gender:
         must_conditions.append(
             FieldCondition(
-                key="gender", match=MatchValue(value=structured_query.gender)
+                key="genders", match=MatchValue(value=structured_query.gender)
             )
         )
 

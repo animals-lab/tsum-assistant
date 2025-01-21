@@ -4,7 +4,7 @@ from uuid import UUID
 from functools import cache
 from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar
 from xml.etree import ElementTree as ET
-
+from loguru import logger
 from pydantic import BaseModel, Field
 
 GenderType = Literal["Мужской", "Женский", "Детский"]
@@ -72,7 +72,9 @@ class Offer(BaseModel):
     color: Optional[str] = None
     color_shade: Optional[str] = None
     design_country: Optional[str] = None
-    gender: Optional[GenderType] = None
+
+    genders: List[GenderType] = Field(default_factory=list)
+
     season: Optional[str] = None
     material: Optional[str] = None
     categories: List[str] = Field(default_factory=list)
@@ -100,28 +102,26 @@ class Offer(BaseModel):
             lines.append(self.design_country)
 
         return "\n".join(lines)
-    
+
     def to_summary(self) -> str:
         summary = self.description or ""
 
         for cat in self.categories:
-            if cat not in summary:
+            if cat not in summary and cat not in ["Женское", "Мужское", "Детское"]: #@monkeypatch
                 summary = f" {cat} {summary}"
 
         if self.name and self.name not in summary:
             summary = f"{self.name} {summary}"
-        
+
         if self.vendor and self.vendor not in summary:
             summary = f" {self.vendor} {summary}"
-        
+
         if self.color_shade:
             if self.color_shade not in summary:
                 summary = f" {self.color_shade} {summary}"
         elif self.color:
             if self.color not in summary:
                 summary = f" {self.color} {summary}"
-
-        
 
         return summary
 
@@ -143,13 +143,17 @@ class Offer(BaseModel):
             "Цвет": "color",
             "Оттенок": "color_shade",
             "Страна дизайна": "design_country",
-            "Пол": "gender",
             "Сезон": "season",
             "Материал": "material",
             "custom categories": "category",
             "Артикул": "tsum_sku",
             "Скидка": "discount",
         }
+
+        param_field_mapping_multi = {
+            "Пол": "genders",
+        }
+
         basic_data = {
             "vendor_sku": extract_value(elem, "vendorCode"),
             "available": elem.get("available") == "true",
@@ -173,9 +177,20 @@ class Offer(BaseModel):
             param_value = param.text
 
             if param_name in param_field_mapping:
+                # warn if multiple values encountered
+                if param_field_mapping[param_name] in special_fields:
+                    logger.warning(
+                        f"Multiple values for {param_field_mapping[param_name]} in offer {basic_data['id']}"
+                    )
                 special_fields[param_field_mapping[param_name]] = param_value
-            # else:
-            #     params[param_name] = param_value
+            elif param_name in param_field_mapping_multi:
+                if not param_field_mapping_multi[param_name] in special_fields:
+                    special_fields[param_field_mapping_multi[param_name]] = []
+                special_fields[param_field_mapping_multi[param_name]].append(
+                    param_value
+                )
+            else:
+                params[param_name] = param_value
 
         # Combine all data
         basic_data.update(special_fields)
@@ -198,9 +213,9 @@ class Offer(BaseModel):
 
         # hash_data = basic_data  # {k: v for k, v in basic_data.items() if k not in ["available"]}
         offer = Offer(**basic_data)
-        offer.hash = hashlib.md5(str(offer.model_dump_json()).encode()).hexdigest()
+        offer.hash = hashlib.md5(str(offer.model_dump_json()).encode()).hexdigest() + "123"
 
-        return Offer(**basic_data)
+        return offer
 
 
 class CatalogQueryResponse(BaseModel):
