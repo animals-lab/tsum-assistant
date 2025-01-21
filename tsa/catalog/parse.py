@@ -15,9 +15,8 @@ from loguru import logger
 
 from tsa.catalog.models import Offer
 from tsa.config import settings
+from tsa.models import Brand, Category
 
-from tsa.config import settings
-from tsa.models import Brand
 
 # Field mappings
 PARAM_FIELD_MAPPING = {
@@ -82,6 +81,8 @@ def parse_catalog(file_path: Path) -> Generator[Offer, None, None]:
     categories = parse_categories(file_path)
     existing_brand_names = set()
     import asyncio
+
+    asyncio.run(update_categories(categories))
 
     for event, elem in context:
         if elem.tag == "offer":
@@ -163,6 +164,7 @@ def stream_text_nodes_from_offers(
         metadata = offer.model_dump(exclude_none=True, exclude_unset=True)
         yield TextNode(text=text, metadata=metadata, id_=offer.id)
 
+
 async def update_brands(brand_name: str):
     async with settings.db.async_session_maker() as session:
         # Get existing brand names from database
@@ -176,6 +178,30 @@ async def update_brands(brand_name: str):
             await session.commit()
 
     return existing_brand_names | {brand_name}
+
+
+async def update_categories(categories: Dict[int, dict]):
+    from sqlalchemy.dialects.postgresql import insert
+
+    insert_categories = [
+        {"id": category_id, **category_data}
+        for category_id, category_data in categories.items()
+    ]
+
+    stmt = insert(Category).values(insert_categories)
+    # print(stmt)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[Category.id],
+        set_={
+            "name": stmt.excluded.name,
+            "url": stmt.excluded.url,
+            "parent_id": stmt.excluded.parent_id,
+        },
+    )
+    # print(stmt)
+    async with settings.db.async_session_maker() as session:
+        await session.execute(stmt)
+        await session.commit()
 
 
 def load_to_qdrant(
@@ -245,7 +271,7 @@ def load_to_qdrant(
                 existing_hashes = []
 
             for n in check_batch:
-                if  n.metadata.get("hash") not in existing_hashes or not existing_hashes:
+                if n.metadata.get("hash") not in existing_hashes or not existing_hashes:
                     batch.append(n)
                 else:
                     total_skipped += 1
@@ -292,10 +318,12 @@ def load_to_qdrant(
         for point in points:
             if point.id not in current_ids and point.payload.get("available", True):
                 point.payload["available"] = False
-                point.payload["hash"] = None # reset hash to force update
+                point.payload["hash"] = None  # reset hash to force update
                 unavailable_points.append(point)
-            
-        logger.info(f"Processed {len(points)} points, found {len(unavailable_points)} unavailable")
+
+        logger.info(
+            f"Processed {len(points)} points, found {len(unavailable_points)} unavailable"
+        )
 
         if offset is None:
             break

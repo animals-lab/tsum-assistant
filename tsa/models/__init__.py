@@ -1,5 +1,5 @@
 from tsa.models.customer import Customer, CustomerBrandPreference, CustomerGender, PreferenceType
-from tsa.models.catalog import Brand
+from tsa.models.catalog import Brand, Category
 
 __all__ = [
     "Customer",
@@ -7,4 +7,5 @@ __all__ = [
     "CustomerGender",
     "PreferenceType",
     "Brand",
+    "Category",
 ] 

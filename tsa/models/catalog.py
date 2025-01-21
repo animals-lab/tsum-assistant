@@ -1,4 +1,4 @@
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, Optional
 from sqlmodel import Field, SQLModel, Relationship
 
 if TYPE_CHECKING:
@@ -18,4 +18,16 @@ class Brand(SQLModel, table=True):
 
     segment_female: str | None = None
     price_segment_female: str | None = None
+
+class Category(SQLModel, table=True):
+    __tablename__ = "category"
+
+    id: Optional[int] = Field(primary_key=True, description="Category id")
+    parent_id: Optional[int] = Field(description="Parent category id")
+   
+    name: str = Field(description="Category name")
+    url: str = Field(description="Category URL")
+
+    children: List["Category"] = Relationship(back_populates="parent")
+    parent: Optional["Category"] = Relationship(back_populates="children")
 
