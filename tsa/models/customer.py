@@ -1,6 +1,7 @@
 from typing import Optional, Literal, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship
 from enum import Enum
+from sqlalchemy import ARRAY, String, Column
 
 from tsa.models.catalog import Brand
 
@@ -26,6 +27,9 @@ class Customer(SQLModel, table=True):
     brand_preferences: List["CustomerBrandPreference"] = Relationship(
         back_populates="customer", sa_relationship_kwargs={"lazy": "selectin"}
     )
+
+    segments: List[str] = Field(default_factory=list, sa_column=Column(ARRAY(String)))
+    price_segments: List[str] = Field(default_factory=list, sa_column=Column(ARRAY(String)))
 
     @property
     def liked_brand_names(self) -> List[str]:

@@ -12,3 +12,10 @@ class Brand(SQLModel, table=True):
     customer_preferences: List["CustomerBrandPreference"] = Relationship(
         back_populates="brand"
     )
+
+    segment_male: str | None = None
+    price_segment_male: str | None = None
+
+    segment_female: str | None = None
+    price_segment_female: str | None = None
+
