@@ -293,7 +293,7 @@ class MainWorkflow(Workflow):
             if isinstance(ev, CatalogResponseEvent):
                 if ev.catalog_summary:
                     context_parts.append(
-                        f"We have executed catalog search and found the following offers: {ev.catalog_summary},we already showed them to the client, please add short summary."
+                        f"We have executed catalog search and found the following offers: {ev.catalog_summary},we already showed them to the client, please add summarize results, apologize if results are not exactly what user."
                     )
                 else:
                     context_parts.append(
