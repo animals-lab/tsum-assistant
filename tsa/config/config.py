@@ -43,10 +43,14 @@ class CatalogSettings(TsaSettings):
     )
     parse_batch: int = Field(500, description="Batch size for processing items")
     check_size: int = Field(500, description="Batch size for checking processed items")
+    use_sample: bool = Field(False, description="Use sample catalog")
 
     @computed_field
     def catalog_file_path(self) -> Path:
         """Get the catalog file path."""
+        if self.use_sample:
+            return self.data_folder / "catalog_sample.xml"
+        
         return self.data_folder / "catalog.xml"
 
 
