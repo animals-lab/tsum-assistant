@@ -23,7 +23,7 @@ from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 from loguru import logger
 from tsa.models.customer import Customer
-from tsa.models.catalog import Category
+from tsa.models.catalog import Category, Brand
 from tsa.config import settings
 
 class ProcessedQueryEvent(Event):
@@ -124,6 +124,26 @@ class SearchWorkflow(Workflow):
 
         if offers:
             ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+
+        if not offers and query.brands:
+            async with settings.db.async_session_maker() as session:
+                similar_brands = await Brand.similar_brand_names(session, query.brands, self.customer.gender)
+                logger.debug(f"Similar brands: {similar_brands}")
+                
+            if similar_brands:
+                if self.customer:
+                    query.brands = [brand for brand in similar_brands if brand not in self.customer.disliked_brand_names]
+                else:
+                    query.brands = similar_brands
+                
+                # it's a hack to allow llm validation to pass through other brands #TODO make it better
+                ev.structured_query.brands = None
+
+                offers, scores = await query_catalog(query)
+                if offers:
+                    logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
+                    ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+
 
         #  fallback to query with category moved to text query 
         # if not offers and query.categories:

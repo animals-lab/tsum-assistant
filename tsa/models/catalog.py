@@ -4,7 +4,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import exists
 
 if TYPE_CHECKING:
-    from tsa.models.customer import CustomerBrandPreference
+    from tsa.models.customer import CustomerBrandPreference, CustomerGender
 
 
 class Brand(SQLModel, table=True):
@@ -20,6 +20,42 @@ class Brand(SQLModel, table=True):
 
     segment_female: str | None = None
     price_segment_female: str | None = None
+
+    @classmethod
+    async def similar_brand_names(cls, session: AsyncSession, brand_names: str, gender: "CustomerGender") -> List[str]:
+        from tsa.models.customer import CustomerGender
+    
+        if gender == CustomerGender.MALE:
+            fields = [cls.segment_male, cls.price_segment_male]
+            segment_condition = cls.segment_male.in_(brand_names)
+            price_segment_condition = cls.price_segment_male.in_(brand_names)
+        else:
+            fields = [cls.segment_female, cls.price_segment_female]
+            segment_condition = cls.segment_female.in_(brand_names)
+            price_segment_condition = cls.price_segment_female.in_(brand_names)
+        
+        # TODO: fix this
+        result = await session.execute(select(*fields).where(cls.name.in_(brand_names)))
+        segments, price_segments = zip(*result.all())
+        segments = { s for s in segments if s is not None }
+        price_segments = { s for s in price_segments if s is not None }
+
+        stmt = select(cls.name)
+        if gender == CustomerGender.MALE: 
+            if segments:
+                stmt = stmt.where(cls.segment_male.in_(segments))
+            if price_segments:
+                stmt = stmt.where(cls.price_segment_male.in_(price_segments))
+        else:
+            if segments:
+                stmt = stmt.where(cls.segment_female.in_(segments))
+            if price_segments:
+                stmt = stmt.where(cls.price_segment_female.in_(price_segments))
+
+
+        res = await session.scalars(stmt)
+        return res.all()
+
 
 class Category(SQLModel, table=True):
     __tablename__ = "category"
