@@ -1,8 +1,8 @@
-"""add categories
+"""categories
 
-Revision ID: d0ce85a814c3
+Revision ID: cd9eab022759
 Revises: cfa16bcd274a
-Create Date: 2025-01-21 23:31:25.627129
+Create Date: 2025-01-22 17:33:23.624553
 
 """
 from typing import Sequence, Union
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 import sqlmodel
 
 # revision identifiers, used by Alembic.
-revision: str = 'd0ce85a814c3'
+revision: str = 'cd9eab022759'
 down_revision: Union[str, None] = 'cfa16bcd274a'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,6 +27,7 @@ def upgrade() -> None:
     sa.Column('parent_id', sa.Integer(), nullable=True),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.ForeignKeyConstraint(['parent_id'], ['category.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###

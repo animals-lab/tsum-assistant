@@ -23,7 +23,8 @@ from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 from loguru import logger
 from tsa.models.customer import Customer
-
+from tsa.models.catalog import Category
+from tsa.config import settings
 
 class ProcessedQueryEvent(Event):
     structured_query: StructuredQuery
@@ -107,7 +108,17 @@ class SearchWorkflow(Workflow):
         """
         Calls the query_catalog function with the structured query.
         """
+        # copy query to avoid mutating the original
         query = StructuredQuery(**ev.structured_query.model_dump())
+        
+        if query.categories:
+            async with settings.db.async_session_maker() as session:
+                for category in query.categories:
+                    if not await Category.exists_by_name(session, category):
+                        logger.info(f"Category {category} not found in database, moving from parameter to text query")
+                        query.categories.remove(category)
+                        query.query_text = f"{query.query_text if query.query_text else ''} {category}"
+
         offers, scores = await query_catalog(query)
         logger.debug(f"{"Query executed successfully" if offers else "Query returned no results"}: {query.to_short_description()}")
 
@@ -115,15 +126,15 @@ class SearchWorkflow(Workflow):
             ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
         #  fallback to query with category moved to text query 
-        if not offers and query.categories:
-                query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.categories)}"
-                query.categories = None
+        # if not offers and query.categories:
+        #         query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.categories)}"
+        #         query.categories = None
 
-                logger.debug(f"Fallback to query with category moved to text query: {query.query_text}")
-                offers, scores = await query_catalog(query)
-                if offers:
-                    logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
-                    ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
+        #         logger.debug(f"Fallback to query with category moved to text query: {query.query_text}")
+        #         offers, scores = await query_catalog(query)
+        #         if offers:
+        #             logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
+        #             ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
         # fallback to query with colors moved to text query
         if not offers and query.colors:

@@ -57,6 +57,13 @@ def parse_categories(file_path: Path) -> Dict[int, dict]:
                 ),
             }
 
+    # check if all categories have parent_id
+    for category in categories.values():
+        if category["parent_id"] and category["parent_id"] not in categories:
+            logger.warning(f"Category {category['name']} has bad parent_id {category['parent_id']}")
+            category["parent_id"] = None
+
+
     # Save categories to JSON file
     output_path = settings.catalog.data_folder / "categories.json"
     with open(output_path, "w", encoding="utf-8") as f:

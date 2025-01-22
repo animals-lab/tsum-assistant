@@ -4,11 +4,6 @@ from tsa.models.catalog import Brand
 from tsa.models.customer import Customer, CustomerBrandPreference, CustomerGender, PreferenceType
 import asyncio
 
-async def create_tables():
-    async with settings.db.engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-
-
 async def seed():
     async with settings.db.async_session_maker() as session:
         # Create Viktor
@@ -79,5 +74,5 @@ async def seed():
 
 
 if __name__ == "__main__":
-    asyncio.run(create_tables())
+    # asyncio.run(create_tables())
     asyncio.run(seed())
