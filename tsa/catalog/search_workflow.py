@@ -22,7 +22,7 @@ from llama_index.core.settings import Settings
 from tsa.chat.chat_events import OfferStreamEvent, OfferFilteredEvent
 import asyncio
 from loguru import logger
-from tsa.models.customer import Customer
+from tsa.models.customer import Customer, CustomerGender
 from tsa.models.catalog import Category, Brand
 from tsa.config import settings
 
@@ -127,7 +127,7 @@ class SearchWorkflow(Workflow):
 
         if not offers and query.brands:
             async with settings.db.async_session_maker() as session:
-                similar_brands = await Brand.similar_brand_names(session, query.brands, self.customer.gender)
+                similar_brands = await Brand.similar_brand_names(session, query.brands, CustomerGender.from_literal(query.gender))
                 logger.debug(f"Similar brands: {similar_brands}")
                 
             if similar_brands:
@@ -145,18 +145,6 @@ class SearchWorkflow(Workflow):
                     ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
 
 
-        #  fallback to query with category moved to text query 
-        # if not offers and query.categories:
-        #         query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.categories)}"
-        #         query.categories = None
-
-        #         logger.debug(f"Fallback to query with category moved to text query: {query.query_text}")
-        #         offers, scores = await query_catalog(query)
-        #         if offers:
-        #             logger.debug(f"Fallback query executed successfully: {query.to_short_description()}")
-        #             ctx.write_event_to_stream(ev=OfferStreamEvent(offers=offers[::-1]))
-
-        # fallback to query with colors moved to text query
         if not offers and query.colors:
             query.query_text = f"{query.query_text if query.query_text else ''} {', '.join(query.colors)}"
             query.colors = None

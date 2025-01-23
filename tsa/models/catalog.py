@@ -27,12 +27,8 @@ class Brand(SQLModel, table=True):
     
         if gender == CustomerGender.MALE:
             fields = [cls.segment_male, cls.price_segment_male]
-            segment_condition = cls.segment_male.in_(brand_names)
-            price_segment_condition = cls.price_segment_male.in_(brand_names)
         else:
             fields = [cls.segment_female, cls.price_segment_female]
-            segment_condition = cls.segment_female.in_(brand_names)
-            price_segment_condition = cls.price_segment_female.in_(brand_names)
         
         # TODO: fix this
         result = await session.execute(select(*fields).where(cls.name.in_(brand_names)))

@@ -10,6 +10,21 @@ class CustomerGender(str, Enum):
     MALE = "male"
     FEMALE = "female"
 
+    @classmethod
+    def from_literal(cls, literal: str) -> "CustomerGender":
+        if "мужской" in literal.lower():
+            return cls.MALE
+        elif "женский" in literal.lower():
+            return cls.FEMALE
+        else:
+            return None
+        
+    def to_literal(self) -> str:
+        return {
+            CustomerGender.MALE: "мужской",
+            CustomerGender.FEMALE: "женский",
+        }.get(self)
+
 
 class Customer(SQLModel, table=True):
     __tablename__ = "customer"
