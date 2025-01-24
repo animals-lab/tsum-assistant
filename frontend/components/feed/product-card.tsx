@@ -21,13 +21,13 @@ export function ProductCard({ product }: ProductCardProps) {
     >
       <div className="w-[272px] group relative rounded-xl overflow-hidden">
         <AspectRatioPrimitive.Root ratio={3/4}>
-          <Image
+          <img
             src={product.picture}
             alt={product.name}
-            fill
+            // fill
             className="object-cover rounded-xl"
             sizes="272px"
-            priority={false}
+            // priority={false}
           />
         </AspectRatioPrimitive.Root>
         
@@ -45,10 +45,10 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           {/* TSUM logo badge */}
           <div className="absolute top-4 left-4 w-12 h-8 bg-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <Image
+            <img
               src="https://www.tsum.ru/static/media/logo.5e134.svg"
               alt="TSUM"
-              fill
+              // fill
               className="object-contain"
             />
           </div>

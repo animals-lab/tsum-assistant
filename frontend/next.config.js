@@ -1,17 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'st-cdn.tsum.com'
-      },
-      {
-        protocol: 'https',
-        hostname: 'st.tsum.com'
-      }
-    ],
-  },
   rewrites: async () => {
     return [
       {
