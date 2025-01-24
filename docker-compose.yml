@@ -1,4 +1,16 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+    depends_on:
+      - postgres
+      - qdrant
+
   postgres:
     image: postgres:alpine
     ports:
