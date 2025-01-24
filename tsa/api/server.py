@@ -20,7 +20,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-LlamaSettings.llm = OpenAI(model="gpt-4o-mini", temperature=0.4)
 if settings.llm.use_observability:
     llama_index.core.set_global_handler(
         "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"

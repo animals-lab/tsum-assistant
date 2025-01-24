@@ -106,13 +106,13 @@ class LLMSettings(TsaSettings):
     embedding_model: str = Field(
         "text-embedding-3-small",
         description="OpenAI embedding model name",
-        env="OPENAI_EMBEDDING_MODEL",
+        alias="OPENAI_EMBEDDING_MODEL",
     )
 
     llm_model: str = Field(
         "gpt-4o-mini",
         description="OpenAI LLM model name",
-        env="OPENAI_LLM_MODEL",
+        alias="OPENAI_LLM_MODEL",
     )
 
     use_observability: bool = Field(False, description="Use observability")
@@ -177,3 +177,4 @@ class Settings(BaseModel):
 # Create a global settings instance
 settings = Settings()
 settings.llm.setup_llama_settings()
+logger.info(f"LLM model: {settings.llm.llm_model}")

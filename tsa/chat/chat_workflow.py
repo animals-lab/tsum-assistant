@@ -5,7 +5,7 @@ from typing import Any, Optional
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.workflow import Context, StartEvent, StopEvent, Workflow, step
-from llama_index.llms.openai import OpenAI
+from llama_index.core import Settings
 from llama_index.core.llms import ChatMessage
 from loguru import logger
 from pydantic import BaseModel, Field
@@ -73,7 +73,7 @@ class MainWorkflow(Workflow):
         **kwargs: Any,
     ):
         super().__init__(*args, **kwargs)
-        self.llm = OpenAI(model="gpt-4o-mini")
+        self.llm = Settings.llm
         self.chat_memory = chat_memory
         self.customer = customer
 
@@ -360,9 +360,7 @@ if __name__ == "__main__":
     )
 
     async def main():
-        memory = ChatMemoryBuffer.from_defaults(
-            llm=OpenAI(model="gpt-4o-mini"),
-        )
+        memory = ChatMemoryBuffer.from_defaults()
 
         # memory.put(
         #     ChatMessage(

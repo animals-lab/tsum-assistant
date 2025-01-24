@@ -74,5 +74,4 @@ async def seed():
 
 
 if __name__ == "__main__":
-    # asyncio.run(create_tables())
     asyncio.run(seed())
