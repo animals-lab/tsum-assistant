@@ -4,7 +4,6 @@ FROM node:20-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
-ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # Set working directory
 WORKDIR /app
