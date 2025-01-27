@@ -25,8 +25,8 @@ async def update_segments():
     logger.info("Starting segments update")
     
     # Read segments data
-    male_segments = read_segment_file(data_dir / "segments - buyers_мужские.csv")
-    female_segments = read_segment_file(data_dir / "segments - buyers_женские.csv")
+    male_segments = read_segment_file(data_dir / "segments - buyers_male.csv")
+    female_segments = read_segment_file(data_dir / "segments - buyers_fem.csv")
     
     created_brands = 0
     updated_brands = 0
