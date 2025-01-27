@@ -42,20 +42,24 @@ def parse_categories(file_path: Path) -> Dict[int, dict]:
         Dict: Dictionary containing category data with IDs as keys
     """
     categories = {}
-    tree = ET.parse(file_path)
-    root = tree.getroot()
-
-    # Find categories section
-    for category in root.findall(".//category"):
-        category_id = category.get("id")
-        if category_id:
-            categories[int(category_id)] = {
-                "name": category.text,
-                "url": category.get("url"),
-                "parent_id": (
-                    int(category.get("parentId")) if category.get("parentId") else None
-                ),
-            }
+    parser = ET.XMLPullParser(['end'])
+    
+    with open(file_path, 'rb') as xml_file:
+        for chunk in iter(lambda: xml_file.read(8192), b''):
+            parser.feed(chunk)
+            for _, elem in parser.read_events():
+                if elem.tag == "category":
+                    category_id = elem.get("id")
+                    if category_id:
+                        categories[int(category_id)] = {
+                            "name": elem.text,
+                            "url": elem.get("url"),
+                            "parent_id": (
+                                int(elem.get("parentId")) if elem.get("parentId") else None
+                            ),
+                        }
+                elem.clear()
+    
 
     # check if all categories have parent_id
     for category in categories.values():
@@ -70,6 +74,7 @@ def parse_categories(file_path: Path) -> Dict[int, dict]:
         json.dump(categories, f, ensure_ascii=False, indent=2)
 
     print(f"Categories saved to {output_path}")
+    
     return categories
 
 
@@ -84,23 +89,20 @@ def parse_catalog(file_path: Path) -> Generator[Offer, None, None]:
     Yields:
         Offer: Pydantic model containing normalized offer data
     """
-    context = ET.iterparse(file_path, events=("end",))
-    categories = parse_categories(file_path)
-    existing_brand_names = set()
     import asyncio
-
+    categories = parse_categories(file_path)
     asyncio.run(update_categories(categories))
-
-    for event, elem in context:
+    
+    context = ET.iterparse(file_path, events=("end",))
+    existing_brand_names = set()
+    for _, elem in context:
         if elem.tag == "offer":
             offer = Offer.from_xml_element(elem, categories)
             if offer.vendor not in existing_brand_names:
                 existing_brand_names = asyncio.run(update_brands(offer.vendor))
-
             yield offer
-
             # Clear element to free memory
-            elem.clear()
+        elem.clear()
 
     # Clear the root element
     context.root.clear()
