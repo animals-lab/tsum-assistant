@@ -26,6 +26,7 @@ ENV PATH="/project/.venv/bin:$PATH"
 COPY alembic.ini /project/alembic.ini
 COPY migrations /project/migrations 
 COPY tsa /project/tsa
+COPY data /project/data
 
 WORKDIR /project
 CMD ["uvicorn", "tsa.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
