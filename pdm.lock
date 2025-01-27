@@ -2,10 +2,10 @@
 # It is not intended for manual editing.
 
 [metadata]
-groups = ["default"]
+groups = ["default", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:1d04fc296abcfd60e77b57a84f49a2a0c79eaafa5e4c4069a32261d461cc25a1"
+content_hash = "sha256:3df22111f3c43854ffc4f393c31aefab1de0130d7c98fcc63f9a80da1b9dc803"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -196,9 +196,10 @@ files = [
 
 [[package]]
 name = "arize-phoenix-otel"
-version = "0.6.1"
+version = "0.7.1"
 summary = ""
 dependencies = [
+    "openinference-instrumentation",
     "openinference-semantic-conventions",
     "opentelemetry-exporter-otlp",
     "opentelemetry-proto",
@@ -207,8 +208,8 @@ dependencies = [
     "typing-extensions",
 ]
 files = [
-    {file = "arize_phoenix_otel-0.6.1-py3-none-any.whl", hash = "sha256:fc00dd847a248cece5f20dffeb8fabfab72c1c38f198bcee4260618c6af1d8a5"},
-    {file = "arize_phoenix_otel-0.6.1.tar.gz", hash = "sha256:f5f7a257159f49b398dfe2ba45bb70e22766cdf61bb365c0c47dc55f329bfe95"},
+    {file = "arize_phoenix_otel-0.7.1-py3-none-any.whl", hash = "sha256:d8c6f2869cd03f1ea7062166ca40cb5921bf59dc5936535a0ded268b7576da96"},
+    {file = "arize_phoenix_otel-0.7.1.tar.gz", hash = "sha256:0154745da500c3f1402f8d280101ce6084c717444b120921288a316ecf29b7a8"},
 ]
 
 [[package]]
@@ -792,6 +793,18 @@ files = [
 ]
 
 [[package]]
+name = "linkify-it-py"
+version = "2.0.3"
+summary = ""
+dependencies = [
+    "uc-micro-py",
+]
+files = [
+    {file = "linkify-it-py-2.0.3.tar.gz", hash = "sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048"},
+    {file = "linkify_it_py-2.0.3-py3-none-any.whl", hash = "sha256:6bcbc417b0ac14323382aef5c5192c0075bf8a9d6b41820a2b66371eac6b6d79"},
+]
+
+[[package]]
 name = "llama-cloud"
 version = "0.1.6"
 summary = ""
@@ -1090,6 +1103,46 @@ files = [
 ]
 
 [[package]]
+name = "markdown-it-py"
+version = "3.0.0"
+summary = ""
+dependencies = [
+    "mdurl",
+]
+files = [
+    {file = "markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb"},
+    {file = "markdown_it_py-3.0.0-py3-none-any.whl", hash = "sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1"},
+]
+
+[[package]]
+name = "markdown-it-py"
+version = "3.0.0"
+extras = ["linkify"]
+summary = ""
+dependencies = [
+    "linkify-it-py",
+    "markdown-it-py==3.0.0",
+]
+files = [
+    {file = "markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb"},
+    {file = "markdown_it_py-3.0.0-py3-none-any.whl", hash = "sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1"},
+]
+
+[[package]]
+name = "markdown-it-py"
+version = "3.0.0"
+extras = ["plugins"]
+summary = ""
+dependencies = [
+    "markdown-it-py==3.0.0",
+    "mdit-py-plugins",
+]
+files = [
+    {file = "markdown-it-py-3.0.0.tar.gz", hash = "sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb"},
+    {file = "markdown_it_py-3.0.0-py3-none-any.whl", hash = "sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1"},
+]
+
+[[package]]
 name = "markupsafe"
 version = "3.0.2"
 summary = ""
@@ -1129,6 +1182,47 @@ dependencies = [
 files = [
     {file = "matplotlib_inline-0.1.7-py3-none-any.whl", hash = "sha256:df192d39a4ff8f21b1895d72e6a13f5fcc5099f00fa84384e0ea28c2cc0653ca"},
     {file = "matplotlib_inline-0.1.7.tar.gz", hash = "sha256:8423b23ec666be3d16e16b60bdd8ac4e86e840ebd1dd11a30b9f117f2fa0ab90"},
+]
+
+[[package]]
+name = "mdit-py-plugins"
+version = "0.4.2"
+summary = ""
+dependencies = [
+    "markdown-it-py",
+]
+files = [
+    {file = "mdit_py_plugins-0.4.2-py3-none-any.whl", hash = "sha256:0c673c3f889399a33b95e88d2f0d111b4447bdfea7f237dab2d488f459835636"},
+    {file = "mdit_py_plugins-0.4.2.tar.gz", hash = "sha256:5f2cd1fdb606ddf152d37ec30e46101a60512bc0e5fa1a7002c36647b09e26b5"},
+]
+
+[[package]]
+name = "mdurl"
+version = "0.1.2"
+summary = ""
+files = [
+    {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
+    {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
+]
+
+[[package]]
+name = "memray"
+version = "1.15.0"
+summary = ""
+dependencies = [
+    "jinja2",
+    "rich",
+    "textual",
+]
+files = [
+    {file = "memray-1.15.0-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:d13554a25129593872b5fbcd55ac34453239e51d9b6ace258329596ccce22bb3"},
+    {file = "memray-1.15.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:8cfe15962a9002ede8b1f8b4f045d95855100a8a60a9bf0d9f2b92950f914189"},
+    {file = "memray-1.15.0-cp312-cp312-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e84b39adca05e720bdbf950cc92ef4bafefa2d6160111e5fc427cf59c6c16d1a"},
+    {file = "memray-1.15.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d7745d2c58dfc33ef77f8827053cb957131420051b67e2d5642b605d0e65a586"},
+    {file = "memray-1.15.0-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:412225d85db0ec22142a82646d85ecc1e8680d33adbfd15789c7eaa356ad4107"},
+    {file = "memray-1.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d25ab7a7e32fedab46219121dfb6ec3e42c66984b217572fdd4cddc37359c521"},
+    {file = "memray-1.15.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:fb885f92833279d34addc607831352e91267b8e547ea861ad561a3dba64f6757"},
+    {file = "memray-1.15.0.tar.gz", hash = "sha256:1beffa2bcba3dbe0f095d547927286eca46e272798b83026dd1b5db58e16ed56"},
 ]
 
 [[package]]
@@ -1236,7 +1330,7 @@ files = [
 
 [[package]]
 name = "openinference-instrumentation"
-version = "0.1.19"
+version = "0.1.21"
 summary = ""
 dependencies = [
     "openinference-semantic-conventions",
@@ -1244,13 +1338,13 @@ dependencies = [
     "opentelemetry-sdk",
 ]
 files = [
-    {file = "openinference_instrumentation-0.1.19-py3-none-any.whl", hash = "sha256:f1a6e31c0c7668f5e3849f7d4a0156409456f35ea1cb19d7495b31f2f5b7d3e5"},
-    {file = "openinference_instrumentation-0.1.19.tar.gz", hash = "sha256:48e91e655dfe49a320f898bb1ec9e68d919e2e222b152cd33366fc94502e9a27"},
+    {file = "openinference_instrumentation-0.1.21-py3-none-any.whl", hash = "sha256:2fab04ff64658b1fffdc47c24c2d391c28c3318d58aceeb7bf42587df7ef4d05"},
+    {file = "openinference_instrumentation-0.1.21.tar.gz", hash = "sha256:208448c20e5639f56ee88c56da271ed34a225bb0cd21b2cb19e112cdf7b609cf"},
 ]
 
 [[package]]
 name = "openinference-instrumentation-llama-index"
-version = "3.0.4"
+version = "3.1.3"
 summary = ""
 dependencies = [
     "openinference-instrumentation",
@@ -1262,8 +1356,8 @@ dependencies = [
     "wrapt",
 ]
 files = [
-    {file = "openinference_instrumentation_llama_index-3.0.4-py3-none-any.whl", hash = "sha256:8e6d69fd4952a06d0ef4b6e852892dca3c37e97554666ebd3c0697defebb22f7"},
-    {file = "openinference_instrumentation_llama_index-3.0.4.tar.gz", hash = "sha256:4a9007affcdf4518c418d34521a4f166af9b0e9dc34f7902dcaa6afb35009eb4"},
+    {file = "openinference_instrumentation_llama_index-3.1.3-py3-none-any.whl", hash = "sha256:fb88190bb604d4322aff5693ff4132f4f642ac60fb44571a957f8439483baa1e"},
+    {file = "openinference_instrumentation_llama_index-3.1.3.tar.gz", hash = "sha256:a245d7c653552269ef9fb1e7617877f051d5c07b27d273333abd710d8488960e"},
 ]
 
 [[package]]
@@ -1471,6 +1565,15 @@ files = [
     {file = "pillow-11.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:8ec4a89295cd6cd4d1058a5e6aec6bf51e0eaaf9714774e1bfac7cfc9051db47"},
     {file = "pillow-11.0.0-cp312-cp312-win_arm64.whl", hash = "sha256:27a7860107500d813fcd203b4ea19b04babe79448268403172782754870dac25"},
     {file = "pillow-11.0.0.tar.gz", hash = "sha256:72bacbaf24ac003fea9bff9837d1eedb6088758d41e100c1552930151f677739"},
+]
+
+[[package]]
+name = "platformdirs"
+version = "4.3.6"
+summary = ""
+files = [
+    {file = "platformdirs-4.3.6-py3-none-any.whl", hash = "sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb"},
+    {file = "platformdirs-4.3.6.tar.gz", hash = "sha256:357fb2acbc885b0419afd3ce3ed34564c13c9b95c89360cd9563f73aa5e2b907"},
 ]
 
 [[package]]
@@ -1798,6 +1901,19 @@ files = [
 ]
 
 [[package]]
+name = "rich"
+version = "13.9.4"
+summary = ""
+dependencies = [
+    "markdown-it-py",
+    "pygments",
+]
+files = [
+    {file = "rich-13.9.4-py3-none-any.whl", hash = "sha256:6049d5e6ec054bf2779ab3358186963bac2ea89175919d699e378b99738c2a90"},
+    {file = "rich-13.9.4.tar.gz", hash = "sha256:439594978a49a09530cff7ebc4b5c7103ef57baf48d5ea3184f21d9a2befa098"},
+]
+
+[[package]]
 name = "scikit-learn"
 version = "1.6.0"
 summary = ""
@@ -2000,6 +2116,21 @@ files = [
 ]
 
 [[package]]
+name = "textual"
+version = "1.0.0"
+summary = ""
+dependencies = [
+    "markdown-it-py",
+    "platformdirs",
+    "rich",
+    "typing-extensions",
+]
+files = [
+    {file = "textual-1.0.0-py3-none-any.whl", hash = "sha256:2d4a701781c05104925e463ae370c630567c70c2880e92ab838052e3e23c986f"},
+    {file = "textual-1.0.0.tar.gz", hash = "sha256:bec9fe63547c1c552569d1b75d309038b7d456c03f86dfa3706ddb099b151399"},
+]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.5.0"
 summary = ""
@@ -2076,6 +2207,15 @@ summary = ""
 files = [
     {file = "tzdata-2024.2-py2.py3-none-any.whl", hash = "sha256:a48093786cdcde33cad18c2555e8532f34422074448fbc874186f0abd79565cd"},
     {file = "tzdata-2024.2.tar.gz", hash = "sha256:7d85cc416e9382e69095b7bdf4afd9e3880418a2413feec7069d533d6b4e31cc"},
+]
+
+[[package]]
+name = "uc-micro-py"
+version = "1.0.3"
+summary = ""
+files = [
+    {file = "uc-micro-py-1.0.3.tar.gz", hash = "sha256:d321b92cff673ec58027c04015fcaa8bb1e005478643ff4a500882eaab88c48a"},
+    {file = "uc_micro_py-1.0.3-py3-none-any.whl", hash = "sha256:db1dffff340817673d7b466ec86114a9dc0e9d4d9b5ba229d9d60e5c12600cd5"},
 ]
 
 [[package]]

@@ -10,6 +10,7 @@ from tsa.api.routers import catalog, chat
 from llama_index.llms.openai import OpenAI
 from llama_index.core.settings import Settings as LlamaSettings
 from tsa.config import settings
+from loguru import logger
 
 # Set up logging
 # Set up root logger with custom formatter
@@ -21,17 +22,15 @@ logging.basicConfig(
 )
 
 if settings.llm.use_observability:
-    llama_index.core.set_global_handler(
-        "arize_phoenix", endpoint="https://llamatrace.com/v1/traces"
-    )
+    logger.info("Setting up observability")
+    from phoenix.otel import register
+    from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 
+    tracer_provider = register(
+        project_name=settings.llm.observability_project_name
+    ) 
+    LlamaIndexInstrumentor().instrument(tracer_provider=tracer_provider)
 
-# Set specific levels for different loggers
-# logging.getLogger("uvicorn").setLevel(logging.INFO)
-# logging.getLogger("fastapi").setLevel(logging.INFO)
-# logging.getLogger("vercel").setLevel(logging.INFO)
-# logging.getLogger("api_server").setLevel(logging.INFO)
-# logging.getLogger("workflow").setLevel(logging.INFO)  # Keep workflow logs visible
 
 logger = logging.getLogger(__name__)
 

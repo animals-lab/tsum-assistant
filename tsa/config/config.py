@@ -101,7 +101,7 @@ class LLMSettings(TsaSettings):
     """Settings for LLM and embeddings."""
 
     
-    model_config = SettingsConfigDict(case_sensitive=False)
+    model_config = SettingsConfigDict(case_sensitive=False, env_prefix="LLM_")
 
     embedding_model: str = Field(
         "text-embedding-3-small",
@@ -116,6 +116,7 @@ class LLMSettings(TsaSettings):
     )
 
     use_observability: bool = Field(False, description="Use observability")
+    observability_project_name: str = Field("tsa", description="Observability project name")
 
     def setup_llama_settings(self) -> None:
         """Configure LlamaIndex settings."""
