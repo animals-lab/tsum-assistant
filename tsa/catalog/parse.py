@@ -59,7 +59,7 @@ def parse_categories(file_path: Path) -> Dict[int, dict]:
                             ),
                         }
                 elem.clear()
-    
+    parser.close()
 
     # check if all categories have parent_id
     for category in categories.values():
@@ -102,7 +102,7 @@ def parse_catalog(file_path: Path) -> Generator[Offer, None, None]:
                 existing_brand_names = asyncio.run(update_brands(offer.vendor))
             yield offer
             # Clear element to free memory
-        elem.clear()
+            elem.clear()
 
     # Clear the root element
     context.root.clear()
