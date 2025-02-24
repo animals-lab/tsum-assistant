@@ -110,7 +110,7 @@ class LLMSettings(TsaSettings):
     )
 
     llm_model: str = Field(
-        "gpt-4o-mini",
+        "gpt-4o",
         description="OpenAI LLM model name",
         env="OPENAI_LLM_MODEL",
     )
